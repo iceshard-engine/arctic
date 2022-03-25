@@ -1,4 +1,4 @@
-# Artic
+# Arctic
 
 A script language for the needs of [IceShard](https://github.com/iceshard-engine/engine).
 
