@@ -1,0 +1,16 @@
+.Project =
+[
+    .Name = 'arctic'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/arctic'
+
+    .Public =
+    [
+        .Modules = {
+            'fmt'
+        }
+    ]
+]
+.Projects + .Project

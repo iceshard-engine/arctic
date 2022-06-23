@@ -1,0 +1,22 @@
+# Rules in this file were initially inferred by Visual Studio IntelliCode from the D:\Repositories\GitHub\Iceshard\engine codebase based on best match to current usage at 10/08/2021
+# You can modify the rules from these initially generated values to suit your own policies
+# You can learn more about editorconfig here: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference
+
+# top-most EditorConfig file
+root = true
+
+[*.{natvis,xml}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hpp,hxx,inl,ipp,ixx,tlh,tli}]
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace =  true
+
+
+# Visual C++ Code Style settings
+
+cpp_generate_documentation_comments = doxygen_double_slash_exclamation

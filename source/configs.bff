@@ -1,0 +1,206 @@
+
+.Configuration_Debug =
+[
+    .ConfigurationName = 'Debug'
+    .ConanConfiguration = 'Debug'
+]
+
+.Configuration_Develop =
+[
+    .ConfigurationName = 'Develop'
+    .ConanConfiguration = 'Release'
+]
+
+.Configuration_Release =
+[
+    .ConfigurationName = 'Release'
+    .ConanConfiguration = 'Release'
+]
+
+^ConfigurationList = {
+    .Configuration_Debug
+    .Configuration_Develop
+    .Configuration_Release
+}
+
+
+.Config_MSVC =
+[
+    .Name = 'Config-MSVC'
+    .Requires = { 'MSVC' }
+    .BuildOptions = {
+        '/std:c++20'
+        '/wd4127' // conditional expression is constant'
+        '/permissive-'
+        '/Z7'
+        '/EHsc'
+        '/W4'
+        '/wd4201' // warning C4201: nonstandard extension used: nameless struct/union
+        '/wd4100' // warning C4100: '...': unreferenced formal parameter
+        '/wd4063' // warning C4063: case '...' is not a valid value for switch of enum '...'
+    }
+    .Defines = {
+        'UNICODE'
+    }
+]
+
+.Config_Unix =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
+        '-Wno-error=deprecated-declarations'
+        // This seems to be a compiler issue related to generated 'coroutine frame stages', probably needs investigation.
+        '-Wno-error=subobject-linkage'
+        '-Wno-switch'
+        '-std=c++20'
+    }
+]
+
+
+.Config_Unix_BinaryBase =
+[
+    .Name = 'Config-Unix-Binary'
+    .Requires = { 'Unix' }
+    .LinkOptions = {
+        '-lc'
+        '-lm'
+        '-lstdc++'
+    }
+]
+
+.Config_Unix_BinaryDll =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'SharedLib' }
+]
+
+.Config_Unix_BinaryApp =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'WindowerApp' }
+]
+
+.Config_Unix_BinaryApp2 =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'ConsoleApp' }
+]
+
+
+.Config_GCC_Tests =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix', 'UnitTests' }
+    .BuildOptions = {
+        '-Wno-unused-variable'
+        '-Wno-unused-value'
+    }
+]
+
+.Config_MSVC_BinaryBase =
+[
+    .Name = 'MSVC-Binary'
+    .LinkOptions = {
+        '/DEBUG'
+    }
+]
+
+.Config_MSVC_BinaryDll =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'SharedLib' }
+]
+.Config_MSVC_BinaryApp =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'WindowerApp' }
+]
+.Config_MSVC_BinaryApp2 =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'ConsoleApp' }
+]
+
+.Config_Debug =
+[
+    .Name = 'Config-Debug'
+    .Requires = { 'Debug' }
+    .Defines = {
+        'ARI_DEBUG'
+    }
+]
+
+.Config_Debug_MSVC =
+[
+    .Name = 'Config-Debug-MSVC'
+    .Requires = { 'Debug', 'MSVC' }
+    .Defines = {
+        '_DEBUG'
+    }
+    .BuildOptions = {
+        ' /Od'
+        ' /MDd'
+    }
+]
+
+.Config_Develop_MSVC =
+[
+    .Name = 'Config-Develop-MSVC'
+    .Requires = { 'Develop', 'MSVC' }
+    .Defines = { }
+    .BuildOptions = {
+        ' /O1'
+        ' /MD'
+    }
+]
+
+.Config_Release_MSVC =
+[
+    .Name = 'Config-Release-MSVC'
+    .Requires = { 'Release', 'MSVC' }
+    .Defines = { }
+    .BuildOptions = {
+        ' /O2'
+        ' /MD'
+    }
+]
+
+.Config_Develop =
+[
+    .Name = 'Config-Develop'
+    .Requires = { 'Develop' }
+    .Defines = {
+        'ARI_DEVELOP'
+    }
+]
+
+.Config_Release =
+[
+    .Name = 'Config-Release'
+    .Requires = { 'Release' }
+    .Defines = {
+        'ARI_RELEASE'
+    }
+]
+
+^GlobalRules = {
+    .Config_MSVC
+    .Config_MSVC_BinaryDll
+    .Config_MSVC_BinaryApp
+    .Config_MSVC_BinaryApp2
+    .Config_Unix
+    .Config_Unix_BinaryDll
+    .Config_Unix_BinaryApp
+    .Config_Unix_BinaryApp2
+    .Config_GCC_Tests
+    .Config_Debug
+    .Config_Debug_MSVC
+    .Config_Develop
+    .Config_Develop_MSVC
+    .Config_Release
+    .Config_Release_MSVC
+}

@@ -1,0 +1,17 @@
+.Project =
+[
+    .Name = 'arctic_test'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/arctic_test'
+    .CopyModules = true
+
+    .Private =
+    [
+        .Uses = {
+            'arctic'
+        }
+    ]
+]
+.Projects + .Project

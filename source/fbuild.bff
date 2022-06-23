@@ -1,0 +1,52 @@
+
+#if __WINDOWS__
+
+#import SystemRoot
+Settings
+{
+    .Environment =
+    {
+        "SystemRoot=$SystemRoot$"
+        "TMP=$SystemRoot$\temp"
+    }
+}
+
+#endif
+
+#include "configs.bff"
+
+^SolutionItems = {
+    '$WorkspaceRoot$/.editorconfig'
+    '$WorkspaceCodeDir$/../conanfile.txt'
+    '$WorkspaceCodeDir$/../fbuild.bff'
+    '$WorkspaceCodeDir$/projects.bff'
+}
+
+#include "code/projects.bff"
+
+.Unity_Pipeline_Windows_x64 =
+[
+    Using( .Pipeline_Windows_x64 )
+
+    .PipelineToolchain = 'msvc-x64-v143'
+    .PipelineAllowUnityBuilds = true
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = true
+        .VSToolset = 'v143'
+        .VSSuffix = ''
+    ]
+]
+
+.Unity_Pipeline_Linux_x64 =
+[
+    Using( .Pipeline_Linux_x64 )
+
+    .PipelineAllowUnityBuilds = true
+]
+
+^BuildPipelines = {
+    .Unity_Pipeline_Windows_x64
+    .Unity_Pipeline_Linux_x64
+}

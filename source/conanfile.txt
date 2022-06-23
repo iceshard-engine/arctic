@@ -1,0 +1,9 @@
+[requires]
+fmt/7.0.3@iceshard/stable
+
+[build_requires]
+fastbuild-generator/0.2.0@iceshard/stable
+
+[generators]
+fastbuild
+json
