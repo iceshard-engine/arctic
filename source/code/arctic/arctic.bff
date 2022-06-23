@@ -2,7 +2,7 @@
 [
     .Name = 'arctic'
     .Kind = .Kind_StaticLib
-    .Group = 'Core'
+    .Group = 'Arctic'
 
     .BaseDir = '$WorkspaceCodeDir$/arctic'
 

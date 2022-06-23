@@ -1,4 +1,4 @@
-#include "arctic_word_matcher.hxx"
+#include <ice/arctic_word_matcher.hxx>
 #include <cassert>
 #include <cctype>
 

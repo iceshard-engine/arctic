@@ -1,5 +1,5 @@
 #pragma once
-#include "arctic_parser_result.hxx"
+#include <ice/arctic_parser_result.hxx>
 
 namespace ice::arctic
 {

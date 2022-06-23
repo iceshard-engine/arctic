@@ -1,5 +1,5 @@
 #pragma once
-#include "arctic_syntax_node.hxx"
+#include <ice/arctic_syntax_node.hxx>
 #include <utility>
 
 namespace ice::arctic
@@ -60,39 +60,5 @@ namespace ice::arctic
             }
         }
     };
-
-    //struct SyntaxModifier
-    //{
-    //	enum class Result : ice::u32
-    //	{
-    //		Unchanged,
-    //		Modified,
-    //	};
-
-    //	struct NodeAllocator
-    //	{
-    //		virtual ~NodeAllocator() noexcept = default;
-
-    //		virtual auto allocate(ice::u64 size, ice::u64 align) noexcept -> void* = 0;
-    //		virtual void deallocate(void* ptr) noexcept = 0;
-
-    //		template<typename T, typename... Args>
-    //		auto create(Args&&... args) noexcept -> T*
-    //		{
-    //			return new (allocate(sizeof(T), alignof(T))){ std::forward<Args>(args)... };
-    //		}
-
-    //		template<typename T>
-    //		void destroy(T* ptr) noexcept
-    //		{
-    //			ptr->~T();
-    //			deallocate(ptr);
-    //		}
-    //	};
-
-    //	virtual ~SyntaxModifier() noexcept = default;
-
-    //	virtual auto visit(ice::arctic::SyntaxNode* node, NodeAllocator& allocator) noexcept -> Result = 0;
-    //};
 
 } // namespace ice::arctic

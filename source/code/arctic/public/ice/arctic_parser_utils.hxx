@@ -1,8 +1,8 @@
 #pragma once
-#include "arctic_types.hxx"
-#include "arctic_token.hxx"
-#include "arctic_lexer.hxx"
-#include "arctic_parser_result.hxx"
+#include <ice/arctic_types.hxx>
+#include <ice/arctic_token.hxx>
+#include <ice/arctic_lexer.hxx>
+#include <ice/arctic_parser_result.hxx>
 
 namespace ice::arctic
 {
@@ -27,8 +27,8 @@ namespace ice::arctic
     ) noexcept -> ice::arctic::ParseState;
 
     //using TokenRuleKeepFn = void(
-    //	ice::arctic::SyntaxNode*,
-    //	ice::arctic::Token const&
+    //    ice::arctic::SyntaxNode*,
+    //    ice::arctic::Token const&
     //) noexcept;
 
     //void TokenRule_SkipKeep(SyntaxNode*, Token const&) noexcept
@@ -38,19 +38,19 @@ namespace ice::arctic
     //template<typename NodeType, auto Member>
     //void TokenRule_StoreToken(SyntaxNode* node, Token const& token) noexcept
     //{
-    //	(static_cast<NodeType*>(node)->*Member) = token;
+    //    (static_cast<NodeType*>(node)->*Member) = token;
     //}
 
     //template<typename NodeType, auto Member>
     //void TokenRule_StoreTrue(SyntaxNode* node, Token const& token) noexcept
     //{
-    //	(static_cast<NodeType*>(node)->*Member) = true;
+    //    (static_cast<NodeType*>(node)->*Member) = true;
     //}
 
     //template<typename NodeType, auto Member>
     //void TokenRule_StoreFalse(SyntaxNode* node, Token const& token) noexcept
     //{
-    //	(static_cast<NodeType*>(node)->*Member) = false;
+    //    (static_cast<NodeType*>(node)->*Member) = false;
     //}
 
 
@@ -221,13 +221,13 @@ namespace ice::arctic
         }
         else
         {
-            auto it = node->child;
-            while (it->sibling != nullptr)
+            auto last_it = node->child;
+            while (last_it->sibling != nullptr)
             {
-                it = it->sibling;
+                last_it = last_it->sibling;
             }
 
-            it->sibling = child;
+            last_it->sibling = child;
         }
 
         return result_state;
@@ -289,13 +289,13 @@ namespace ice::arctic
         }
         else
         {
-            auto it = node->sibling;
-            while (it->sibling != nullptr)
+            SyntaxNode* last_it = node->sibling;
+            while (last_it->sibling != nullptr)
             {
-                it = it->sibling;
+                last_it = last_it->sibling;
             }
 
-            it->sibling = sibling;
+            last_it->sibling = sibling;
         }
 
         return result_state;

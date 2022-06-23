@@ -1,10 +1,7 @@
 #pragma once
-#include "arctic_lexer.hxx"
-#include "arctic_syntax_node.hxx"
-#include "arctic_parser_result.hxx"
-
-#pragma once
-#include "arctic_parser_result.hxx"
+#include <ice/arctic_lexer.hxx>
+#include <ice/arctic_syntax_node.hxx>
+#include <ice/arctic_parser_result.hxx>
 
 namespace ice::arctic
 {

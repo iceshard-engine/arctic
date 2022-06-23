@@ -1,6 +1,6 @@
 #pragma once
-#include "arctic_syntax_visitor.hxx"
-#include "arctic_lexer.hxx"
+#include <ice/arctic_syntax_visitor.hxx>
+#include <ice/arctic_lexer.hxx>
 
 #include <vector>
 

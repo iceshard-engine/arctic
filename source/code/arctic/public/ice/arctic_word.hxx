@@ -1,5 +1,5 @@
 #pragma once
-#include "arctic_types.hxx"
+#include <ice/arctic_types.hxx>
 
 namespace ice::arctic
 {

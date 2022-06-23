@@ -1,6 +1,6 @@
 #pragma once
-#include "arctic_token.hxx"
-#include "arctic_word_processor.hxx"
+#include <ice/arctic_token.hxx>
+#include <ice/arctic_word_processor.hxx>
 
 namespace ice::arctic
 {
@@ -18,7 +18,7 @@ namespace ice::arctic
     {
         ice::arctic::LexerRules rules = LexerRules::Provided;
 
-        //! \bried Sets the size of tab characters when calculating the token column.
+        //! \brief Sets the size of tab characters when calculating the token column.
         //! \note This will ensure error messages will have a proper column value.
         ice::u32 tab_size = 4;
     };

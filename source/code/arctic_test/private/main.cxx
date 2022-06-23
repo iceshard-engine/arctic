@@ -1,14 +1,15 @@
 #include <Windows.h>
 #include <filesystem>
 #include <iostream>
-#include <format>
 #include <string_view>
 #include <unordered_map>
 
-#include "arctic_word_matcher.hxx"
-#include "arctic_word_processor.hxx"
-#include "arctic_lexer.hxx"
-#include "arctic_parser.hxx"
+#include <fmt/format.h>
+
+#include <ice/arctic_word_matcher.hxx>
+#include <ice/arctic_word_processor.hxx>
+#include <ice/arctic_lexer.hxx>
+#include <ice/arctic_parser.hxx>
 
 static auto str_view(ice::arctic::Token const& tok) noexcept -> std::string_view
 {
@@ -29,10 +30,10 @@ struct MyVisitors : ice::arctic::SyntaxVisitorGroup<
 
     void visit(ice::arctic::SyntaxNode_TypeDef const* node) noexcept override
     {
-        auto msg = std::format(
+        std::string msg = fmt::format(
             "TypeDef: {} == {}, is_alias: {}",
-            std::string_view{ (const char*)node->name.value.data(), node->name.value.size() },
-            std::string_view{ (const char*)node->base_type.value.data(), node->base_type.value.size() },
+            fmt::string_view{ (const char*)node->name.value.data(), node->name.value.size() },
+            fmt::string_view{ (const char*)node->base_type.value.data(), node->base_type.value.size() },
             node->is_alias
         );
 
@@ -77,9 +78,9 @@ struct MyVisitors : ice::arctic::SyntaxVisitorGroup<
 
     void visit(ice::arctic::SyntaxNode_Struct const* node) noexcept override
     {
-        auto msg = std::format(
+        std::string msg = fmt::format(
             "Struct: {}",
-            std::string_view{ (const char*)node->name.value.data(), node->name.value.size() }
+            fmt::string_view{ (const char*)node->name.value.data(), node->name.value.size() }
         );
 
         std::cout << msg << "\n";
@@ -89,10 +90,10 @@ struct MyVisitors : ice::arctic::SyntaxVisitorGroup<
         {
             ice::arctic::SyntaxNode_StructMember const* member = static_cast<ice::arctic::SyntaxNode_StructMember const*>(child);
 
-            auto msg2 = std::format(
+            std::string msg2 = fmt::format(
                 "- {} : {}",
-                std::string_view{ (const char*)member->name.value.data(), member->name.value.size() },
-                std::string_view{ (const char*)member->type.value.data(), member->type.value.size() }
+                fmt::string_view{ (const char*)member->name.value.data(), member->name.value.size() },
+                fmt::string_view{ (const char*)member->type.value.data(), member->type.value.size() }
             );
 
             std::cout << msg2 << "\n";
@@ -814,7 +815,7 @@ private:
 
 auto main(int argc, char** argv) -> int
 {
-    if (argc == 0)
+    if (argc < 2)
     {
         return -1;
     }

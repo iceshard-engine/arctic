@@ -1,6 +1,6 @@
-#include "arctic_parser.hxx"
-#include "arctic_parser_logic.hxx"
-#include "arctic_parser_utils.hxx"
+#include <ice/arctic_parser.hxx>
+#include <ice/arctic_parser_logic.hxx>
+#include <ice/arctic_parser_utils.hxx>
 
 namespace ice::arctic
 {

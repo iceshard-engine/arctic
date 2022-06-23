@@ -1,7 +1,5 @@
 #pragma once
 #include <inttypes.h>
-
-#if not defined ICESHARD_PROJECT_CONTEXT
 #include <string_view>
 #include <span>
 
@@ -31,9 +29,3 @@ namespace ice
     using Span = std::span<T>;
 
 } // namespace ice
-#endif
-
-namespace ice::arctic
-{
-
-} // namespace ice::arctic

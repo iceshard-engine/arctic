@@ -1,5 +1,5 @@
-#include "arctic_lexer.hxx"
-#include "arctic_lexer_rules.hxx"
+#include <ice/arctic_lexer.hxx>
+#include <ice/arctic_lexer_rules.hxx>
 
 #include <cassert>
 

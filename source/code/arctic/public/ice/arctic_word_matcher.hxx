@@ -1,5 +1,5 @@
 #pragma once
-#include "arctic_word.hxx"
+#include <ice/arctic_word.hxx>
 
 namespace ice::arctic
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "arctic_types.hxx"
-#include "arctic_syntax_node.hxx"
+#include <ice/arctic_types.hxx>
+#include <ice/arctic_syntax_node.hxx>
 
 namespace ice::arctic
 {

@@ -1,4 +1,4 @@
-#include "arctic_lexer_rules.hxx"
+#include <ice/arctic_lexer_rules.hxx>
 
 namespace ice::arctic
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "arctic_token.hxx"
-#include "arctic_word_processor.hxx"
+#include <ice/arctic_token.hxx>
+#include <ice/arctic_word_processor.hxx>
 
 namespace ice::arctic
 {

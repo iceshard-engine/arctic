@@ -2,8 +2,8 @@
 #include <assert.h>
 #include <coroutine>
 
-#include "arctic_word.hxx"
-#include "arctic_generator.hxx"
+#include <ice/arctic_word.hxx>
+#include <ice/arctic_generator.hxx>
 
 namespace ice::arctic
 {

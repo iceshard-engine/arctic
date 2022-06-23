@@ -1,5 +1,5 @@
-#include "arctic_parser_logic.hxx"
-#include "arctic_parser_utils.hxx"
+#include <ice/arctic_parser_logic.hxx>
+#include <ice/arctic_parser_utils.hxx>
 
 namespace ice::arctic
 {
@@ -105,25 +105,25 @@ namespace ice::arctic
                 //ice::arctic::ParseResult<ice::arctic::SyntaxNode*> result = match_struct(nullptr, node, token, lexer);
                 //while (result.has_error() == false && token.type != TokenType::CT_SquareBracketClose)
                 //{
-                //	SyntaxNode_StructMember* member = alloc.create<SyntaxNode_StructMember>();
+                //    SyntaxNode_StructMember* member = alloc.create<SyntaxNode_StructMember>();
 
-                //	if (last_child == nullptr)
-                //	{
-                //		node->child = member;
-                //		last_child = member;
-                //	}
-                //	else
-                //	{
-                //		last_child->sibling = member;
-                //		last_child = member;
-                //	}
+                //    if (last_child == nullptr)
+                //    {
+                //        node->child = member;
+                //        last_child = member;
+                //    }
+                //    else
+                //    {
+                //        last_child->sibling = member;
+                //        last_child = member;
+                //    }
 
-                //	result = match_struct_member(nullptr, member, token, lexer);
+                //    result = match_struct_member(nullptr, member, token, lexer);
                 //}
 
                 //if (result.has_error() == false)
                 //{
-                //	result = node;
+                //    result = node;
                 //}
                 //return result;
             }

@@ -1,5 +1,5 @@
-#include "arctic_word_processor.hxx"
-#include "arctic_word_matcher.hxx"
+#include <ice/arctic_word_processor.hxx>
+#include <ice/arctic_word_matcher.hxx>
 
 #include <iostream>
 
