@@ -1,0 +1,7 @@
+# Directories
+build/
+.vs/
+.code/
+
+# File patterns
+*.sln
