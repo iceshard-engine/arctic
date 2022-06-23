@@ -20,6 +20,8 @@ Settings
     '$WorkspaceCodeDir$/../conanfile.txt'
     '$WorkspaceCodeDir$/../fbuild.bff'
     '$WorkspaceCodeDir$/projects.bff'
+    ; Additional data used for testing
+    '$WorkspaceCodeDir$/../data/test.arctic'
 }
 
 #include "code/projects.bff"
