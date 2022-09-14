@@ -1,4 +1,3 @@
-#include <Windows.h>
 #include <filesystem>
 #include <iostream>
 #include <string_view>
@@ -10,6 +9,10 @@
 #include <ice/arctic_word_processor.hxx>
 #include <ice/arctic_lexer.hxx>
 #include <ice/arctic_parser.hxx>
+
+#if defined _WIN32
+#include <Windows.h>
+#endif
 
 static auto str_view(ice::arctic::Token const& tok) noexcept -> std::string_view
 {
@@ -374,7 +377,7 @@ struct GLSL_Transpiler : ice::arctic::SyntaxVisitorGroup<
     void visit(ice::arctic::SyntaxNode_Function const* node) noexcept override
     {
         ice::String return_type = node->result_type.value;
-        ice::arctic::SyntaxNode_AnnotationAttribute const* attrib = nullptr;
+        //ice::arctic::SyntaxNode_AnnotationAttribute const* attrib = nullptr;
         //while(get_next_attrib(node, attrib))
         {
             //if (attrib->name.value == u8"vertex_shader")
@@ -717,7 +720,7 @@ struct HLSL_Transpiler : ice::arctic::SyntaxVisitorGroup<
     {
         bool main_func = false;
         ice::String return_type = node->result_type.value;
-        ice::arctic::SyntaxNode_AnnotationAttribute const* attrib = nullptr;
+        // ice::arctic::SyntaxNode_AnnotationAttribute const* attrib = nullptr;
         //while (get_next_attrib(node, attrib))
         {
             //if (attrib->name.value == u8"vertex_shader")
@@ -820,9 +823,10 @@ auto main(int argc, char** argv) -> int
         return -1;
     }
 
-    std::filesystem::path script_path = std::filesystem::absolute(argv[1]);
 
     Buffer<ice::utf8> contents;
+#if defined _WIN32
+    std::filesystem::path script_path = std::filesystem::absolute(argv[1]);
 
     HANDLE file_handle = CreateFile(script_path.c_str(), GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (file_handle != INVALID_HANDLE_VALUE)
@@ -839,6 +843,13 @@ auto main(int argc, char** argv) -> int
 
         CloseHandle(file_handle);
     }
+#else
+    FILE* f = fopen(argv[1], "rb+");
+    if (f != 0)
+    {
+        fclose(f);
+    }
+#endif
 
     ice::u32 token_count = 0;
 

@@ -20,7 +20,7 @@ namespace ice::arctic::rules
         }
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpValues[]{
+    static ice::arctic::TokenRule const MatchRules_ExpValues[]{
         TokenRule_MatchType<TokenType::CT_Number, TokenRule_StoreToken<&SyntaxNode_ExpressionValue::value>>{},
         TokenRule_MatchType<TokenType::CT_NumberBin, TokenRule_StoreToken<&SyntaxNode_ExpressionValue::value>>{},
         TokenRule_MatchType<TokenType::CT_NumberFloat, TokenRule_StoreToken<&SyntaxNode_ExpressionValue::value>>{},
@@ -33,21 +33,21 @@ namespace ice::arctic::rules
         TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_ExpressionValue::value>>{},
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpValue[]{
+    static ice::arctic::TokenRule const MatchRules_ExpValue[]{
         TokenGroup_MatchFirst{ MatchRules_ExpValues }
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpBinaryOperations[]{
+    static ice::arctic::TokenRule const MatchRules_ExpBinaryOperations[]{
         TokenRule_MatchType<TokenType::OP_Assign, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
         TokenRule_MatchType<TokenType::OP_Plus, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
         TokenRule_MatchType<TokenType::OP_Minus, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
         TokenRule_MatchType<TokenType::OP_Mul, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
         TokenRule_MatchType<TokenType::OP_Div, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
         TokenRule_MatchType<TokenType::OP_And, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
-        TokenRule_MatchType<TokenType::OP_Or, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{},
+        TokenRule_MatchType<TokenType::OP_Or, TokenRule_StoreToken<&SyntaxNode_ExpressionBinaryOperation::operation>>{}
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpBinaryOperation[]{
+    static ice::arctic::TokenRule const MatchRules_ExpBinaryOperation[]{
         TokenGroup_MatchFirst{ MatchRules_ExpBinaryOperations }
     };
 
@@ -61,7 +61,7 @@ namespace ice::arctic::rules
         ice::arctic::Lexer& lexer
     ) noexcept -> ice::arctic::ParseState;
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpCallExpression[]{
+    static ice::arctic::TokenRule const MatchRules_ExpCallExpression[]{
         ice::arctic::TokenRule{
             .optional = false,
             .repeat = false,
@@ -72,16 +72,16 @@ namespace ice::arctic::rules
     };
 
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpBinaryLeftAndOperation[]{
+    static ice::arctic::TokenRule const MatchRules_ExpBinaryLeftAndOperation[]{
         TokenGroup_MatchSibling{ SyntaxNode_ExpressionValue{ }, MatchRules_ExpValue },
         TokenGroup_MatchSibling{ SyntaxNode_ExpressionBinaryOperation{}, MatchRules_ExpBinaryOperation, true },
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpBinary[]{
+    static ice::arctic::TokenRule const MatchRules_ExpBinary[]{
         TokenGroup_MatchAll{ MatchRules_ExpBinaryLeftAndOperation, false, true }
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_ExpBinaryAll =
+    static ice::arctic::TokenRule const MatchRules_ExpBinaryAll =
         TokenGroup_MatchAll{ MatchRules_ExpBinary };
 
 
@@ -94,7 +94,7 @@ namespace ice::arctic::rules
         ice::arctic::Lexer& lexer
     ) noexcept -> ice::arctic::ParseState;
 
-    static ice::arctic::TokenRule constexpr MatchRules_RecursiveExpression[]{
+    static ice::arctic::TokenRule const MatchRules_RecursiveExpression[]{
         ice::arctic::TokenRule{
             .optional = false,
             .repeat = false,
@@ -104,7 +104,7 @@ namespace ice::arctic::rules
         }
     };
 
-    static ice::arctic::TokenRule constexpr MatchRules_RecursiveExpressionRepeat[]{
+    static ice::arctic::TokenRule const MatchRules_RecursiveExpressionRepeat[]{
         ice::arctic::TokenRule{
             .optional = false,
             .repeat = true,
@@ -124,7 +124,7 @@ namespace ice::arctic::rules
     ) noexcept -> ice::arctic::ParseState
     {
         static ice::arctic::TokenRule const match_rec = TokenGroup_MatchAll{ MatchRules_RecursiveExpression };
-        static ice::arctic::TokenRule constexpr match_post_binary = TokenGroup_MatchSibling{ SyntaxNode_ExpressionBinaryOperation{}, MatchRules_ExpBinaryOperation, true };
+        static ice::arctic::TokenRule const match_post_binary = TokenGroup_MatchSibling{ SyntaxNode_ExpressionBinaryOperation{}, MatchRules_ExpBinaryOperation, true };
 
         ice::arctic::ParseState result = ParseState::Success;
 

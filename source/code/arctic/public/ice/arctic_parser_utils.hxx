@@ -557,12 +557,12 @@ namespace ice::arctic
             return fail_state;
         }
 
-        constexpr operator TokenRule() const noexcept
+        inline operator TokenRule() const noexcept
         {
             return TokenRule{
                 .optional = optional,
                 .repeat = repeat,
-                .userdata = func,
+                .userdata = (void const*)func,
                 .func = rule_fn
             };
         }

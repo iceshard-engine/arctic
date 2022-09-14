@@ -7,7 +7,7 @@ namespace ice::arctic
     auto to_string(ice::arctic::ParseState state) noexcept -> std::string_view
     {
         switch(state)
-#define CASE(value, ...) case ParseState::value: return #value##__VA_ARGS__
+#define CASE(value, ...) case ParseState::value: return #value #__VA_ARGS__ ""
         {
             CASE(Success);
             CASE(Warning, ": Unknown");
@@ -19,7 +19,7 @@ namespace ice::arctic
             CASE(Error_TypeOf_MissingBracketClose);
 #undef CASE
         }
-        return "<???>";
+        return "<?>";
     }
 
 } // namespace ice::arctic

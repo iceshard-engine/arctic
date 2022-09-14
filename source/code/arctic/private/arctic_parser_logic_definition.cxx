@@ -22,7 +22,7 @@ namespace ice::arctic
         namespace typeof
         {
 
-            static ice::arctic::TokenRule constexpr MatchRules_Definition_TypeOfBaseType[]{
+            static ice::arctic::TokenRule const MatchRules_Definition_TypeOfBaseType[]{
                 TokenRule_MatchType<TokenType::CT_SquareBracketOpen>{}
                     .fail_with(ParseState::Error_TypeOf_MissingBracketOpen),
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_TypeDef::base_type>>{}
@@ -31,12 +31,12 @@ namespace ice::arctic
                     .fail_with(ParseState::Error_TypeOf_MissingBracketClose)
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Definition_TypeOfSubType[]{
+            static ice::arctic::TokenRule const MatchRules_Definition_TypeOfSubType[]{
                 TokenRule_MatchType<TokenType::KW_Alias, TokenRule_StoreBool<&SyntaxNode_TypeDef::is_alias, true>>{},
                 TokenRule_MatchType<TokenType::KW_TypeOf, TokenRule_StoreBool<&SyntaxNode_TypeDef::is_alias, false>>{},
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Definition_TypeOf[]{
+            static ice::arctic::TokenRule const MatchRules_Definition_TypeOf[]{
                 TokenGroup_MatchFirst{ MatchRules_Definition_TypeOfSubType },
                 TokenGroup_MatchAll{ MatchRules_Definition_TypeOfBaseType }
             };
@@ -63,14 +63,14 @@ namespace ice::arctic
         namespace struct_type
         {
 
-            static ice::arctic::TokenRule constexpr MatchRules_Definition_StructMember[]{
+            static ice::arctic::TokenRule const MatchRules_Definition_StructMember[]{
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_StructMember::name>>{},
                 TokenRule_MatchType<TokenType::CT_Colon>{},
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_StructMember::type>>{},
                 TokenRule_MatchType<TokenType::ST_EndOfLine>{}
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Definition_Struct[]{
+            static ice::arctic::TokenRule const MatchRules_Definition_Struct[]{
                 TokenRule_MatchType<TokenType::KW_Struct>{},
                 TokenRule_MatchType<TokenType::CT_SquareBracketOpen>{}
                     .fail_with(ParseState::Error_TypeOf_MissingBracketOpen),
@@ -130,13 +130,13 @@ namespace ice::arctic
 
         } // namespace struct_type
 
-        static ice::arctic::TokenRule constexpr MatchRules_DefinitionTypes[]{
+        static ice::arctic::TokenRule const MatchRules_DefinitionTypes[]{
             TokenRule_MatchType<TokenType::KW_TypeOf>{},
             TokenRule_MatchType<TokenType::KW_Struct>{},
             TokenRule_MatchType<TokenType::KW_Alias>{},
         };
 
-        static ice::arctic::TokenRule constexpr MatchRules_Definition[]{
+        static ice::arctic::TokenRule const MatchRules_Definition[]{
             TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&TempNode::matched_token>>{},
             TokenRule_MatchType<TokenType::OP_Assign>{},
         };
@@ -187,7 +187,7 @@ namespace ice::arctic
         namespace func
         {
 
-            static ice::arctic::TokenRule constexpr MatchRules_FunctionArg[]{
+            static ice::arctic::TokenRule const MatchRules_FunctionArg[]{
                 TokenRule_MatchType<TokenType::ST_EndOfLine>{.optional = true},
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_FunctionArgument::name>>{},
                 TokenRule_MatchType<TokenType::CT_Colon>{},
@@ -196,7 +196,7 @@ namespace ice::arctic
                 TokenRule_MatchType<TokenType::CT_Comma>{ .optional = true }
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Function[]{
+            static ice::arctic::TokenRule const MatchRules_Function[]{
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_Function::name>>{},
                 TokenRule_MatchType<TokenType::CT_ParenOpen>{}.fail_with(ParseState::Error_UnexpectedToken),
                 TokenGroup_MatchChild{ SyntaxNode_FunctionArgument{}, MatchRules_FunctionArg, true, true },
@@ -235,7 +235,7 @@ namespace ice::arctic
         namespace attribs
         {
 
-            static ice::arctic::TokenRule constexpr MatchRules_AttributeValue[]{
+            static ice::arctic::TokenRule const MatchRules_AttributeValue[]{
                 TokenRule_MatchType<TokenType::CT_Number, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::value>>{},
                 TokenRule_MatchType<TokenType::CT_NumberBin, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::value>>{},
                 TokenRule_MatchType<TokenType::CT_NumberFloat, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::value>>{},
@@ -248,33 +248,33 @@ namespace ice::arctic
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::value>>{},
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_AttributeName[]{
+            static ice::arctic::TokenRule const MatchRules_AttributeName[]{
                 TokenRule_MatchType<TokenType::CT_Colon, TokenRule_MergeToken<&SyntaxNode_AnnotationAttribute::name>>{.repeat = true },
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_MergeToken<&SyntaxNode_AnnotationAttribute::name>>{ },
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_AttributeAssignValue[]{
+            static ice::arctic::TokenRule const MatchRules_AttributeAssignValue[]{
                 TokenRule_MatchType<TokenType::OP_Assign>{},
                 TokenGroup_MatchFirst{ MatchRules_AttributeValue }
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_AttributeFirst[]{
+            static ice::arctic::TokenRule const MatchRules_AttributeFirst[]{
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::name>>{ },
                 TokenGroup_MatchAll{ MatchRules_AttributeAssignValue, true }
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Attribute[]{
+            static ice::arctic::TokenRule const MatchRules_Attribute[]{
                 TokenRule_MatchType<TokenType::CT_Comma>{},
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_AnnotationAttribute::name>>{ },
                 TokenGroup_MatchAll{ MatchRules_AttributeAssignValue, true }
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Attributes[]{
+            static ice::arctic::TokenRule const MatchRules_Attributes[]{
                 TokenGroup_MatchChild{ SyntaxNode_AnnotationAttribute{}, MatchRules_AttributeFirst },
                 TokenGroup_MatchChild{ SyntaxNode_AnnotationAttribute{}, MatchRules_Attribute, /*.optional =*/ true, /*.repeat =*/ true },
             };
 
-            static ice::arctic::TokenRule constexpr MatchRules_Annotation[]{
+            static ice::arctic::TokenRule const MatchRules_Annotation[]{
                 TokenRule_MatchType<TokenType::CT_SquareBracketOpen>{},
                 TokenGroup_MatchAll{ MatchRules_Attributes, false, false },
                 TokenRule_MatchType<TokenType::CT_SquareBracketClose>{}
@@ -302,7 +302,7 @@ namespace ice::arctic
         namespace variable
         {
 
-            static ice::arctic::TokenRule constexpr MatchRules_Variable[]{
+            static ice::arctic::TokenRule MatchRules_Variable[]{
                 TokenRule_MatchType<TokenType::KW_Let>{},
                 TokenRule_MatchType<TokenType::CT_Symbol, TokenRule_StoreToken<&SyntaxNode_Variable::name>>{},
                 TokenRule_MatchType<TokenType::CT_Colon>{},

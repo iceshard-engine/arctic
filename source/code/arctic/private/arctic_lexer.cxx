@@ -94,7 +94,7 @@ namespace ice::arctic
         co_return Token{
             .value = { },
             .type = TokenType::ST_EndOfFile,
-            .location = { .line = word.location.line + 1, .column = 0 }
+            .location = { .line = word.location.line + 1u, .column = 0 }
         };
     }
 

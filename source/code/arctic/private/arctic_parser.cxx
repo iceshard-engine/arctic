@@ -1,6 +1,9 @@
 #include <ice/arctic_parser.hxx>
 #include <ice/arctic_parser_logic.hxx>
 #include <ice/arctic_parser_utils.hxx>
+#if !defined _WIN32
+#include <malloc.h>
+#endif
 
 namespace ice::arctic
 {
@@ -133,6 +136,7 @@ namespace ice::arctic
         }
     }
 
+#if defined _WIN32
     auto Parser::allocate(ice::u64 size, ice::u64 align) noexcept -> void*
     {
         return _aligned_malloc(size, align);
@@ -142,5 +146,16 @@ namespace ice::arctic
     {
         _aligned_free(ptr);
     }
+#else
+    auto Parser::allocate(ice::u64 size, ice::u64 align) noexcept -> void*
+    {
+        return aligned_alloc(align, size);
+    }
+
+    void Parser::deallocate(void* ptr) noexcept
+    {
+        free(ptr);
+    }
+#endif
 
 } // namespace ice::arctic
