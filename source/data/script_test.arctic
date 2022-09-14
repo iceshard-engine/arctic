@@ -1,0 +1,6 @@
+context Script
+
+fn foo() : i32
+{
+    foo = 42
+}

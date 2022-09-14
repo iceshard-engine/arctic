@@ -4,21 +4,21 @@
 namespace ice::arctic::rules
 {
 
-    struct EnsureTokenOnExit final
-    {
-        ice::arctic::ParseState const fail_state = ParseState::Error;
-        ice::arctic::ParseResult<ice::arctic::SyntaxNode*>& result;
-        ice::arctic::TokenType const expected_type;
-        ice::arctic::Token const& token_ref;
+    // struct EnsureTokenOnExit final
+    // {
+    //     ice::arctic::ParseState const fail_state = ParseState::Error;
+    //     ice::arctic::ParseResult<ice::arctic::SyntaxNode*>& result;
+    //     ice::arctic::TokenType const expected_type;
+    //     ice::arctic::Token const& token_ref;
 
-        inline ~EnsureTokenOnExit() noexcept
-        {
-            if (token_ref.type != expected_type)
-            {
-                result = fail_state;
-            }
-        }
-    };
+    //     inline ~EnsureTokenOnExit() noexcept
+    //     {
+    //         if (token_ref.type != expected_type)
+    //         {
+    //             result = fail_state;
+    //         }
+    //     }
+    // };
 
     static ice::arctic::TokenRule const MatchRules_ExpValues[]{
         TokenRule_MatchType<TokenType::CT_Number, TokenRule_StoreToken<&SyntaxNode_ExpressionValue::value>>{},

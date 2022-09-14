@@ -136,6 +136,11 @@ namespace ice::arctic
         }
     }
 
+    void Parser::add_visitor(ice::arctic::SyntaxVisitorBase& visitor) noexcept
+    {
+        _visitors.push_back(&visitor);
+    }
+
 #if defined _WIN32
     auto Parser::allocate(ice::u64 size, ice::u64 align) noexcept -> void*
     {

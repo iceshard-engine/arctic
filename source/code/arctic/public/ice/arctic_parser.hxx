@@ -12,10 +12,7 @@ namespace ice::arctic
     public:
         void parse(ice::arctic::Lexer& lexer) noexcept;
 
-        void add_visitor(ice::arctic::SyntaxVisitorBase& visitor) noexcept
-        {
-            _visitors.push_back(&visitor);
-        }
+        void add_visitor(ice::arctic::SyntaxVisitorBase& visitor) noexcept;
 
         auto allocate(ice::u64 size, ice::u64 align) noexcept -> void*;
         void deallocate(void* ptr) noexcept;

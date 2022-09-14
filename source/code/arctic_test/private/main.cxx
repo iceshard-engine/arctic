@@ -10,8 +10,20 @@
 #include <ice/arctic_lexer.hxx>
 #include <ice/arctic_parser.hxx>
 
+#include <ice/arctic_bytecode.hxx>
+#include <ice/arctic_vm.hxx>
+
 #if defined _WIN32
 #include <Windows.h>
+#else
+#include <sys/stat.h>
+
+long GetFileSize(std::string filename)
+{
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
 #endif
 
 static auto str_view(ice::arctic::Token const& tok) noexcept -> std::string_view
@@ -816,15 +828,89 @@ private:
     std::vector<TokenReplacement> _shader_ctx_tokens;
 };
 
-#include <sys/stat.h>
+using ice::arctic::ByteCode;
+using ice::arctic::SyntaxEntity;
 
-long GetFileSize(std::string filename)
+struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 {
-    struct stat stat_buf;
-    int rc = stat(filename.c_str(), &stat_buf);
-    return rc == 0 ? stat_buf.st_size : -1;
-}
+    std::vector<ByteCode> codes;
+    std::vector<std::vector<ByteCode>> codeblocks;
 
+    void visit(ice::arctic::SyntaxNode const* node) noexcept override
+    {
+        std::cout << "- " << to_string(node->entity) << "\n";
+
+        if (node->entity == SyntaxEntity::DEF_Function)
+        {
+            codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 64 /*stack_size*/ }, ByteCode::OR_VOID });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_EXEC, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE, ByteCode::OR_R0 });
+            codes.push_back(ByteCode::Value{ 42 });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE, ByteCode::OR_R1 });
+            codes.push_back(ByteCode::Value{ 42 });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_REG, ByteCode::OR_R0 });
+            codes.push_back(ByteCode::Value{ ByteCode::OR_R1 });
+            codes.push_back(ByteCode::Op{ ByteCode::OC_END });
+
+            codeblocks.push_back(std::move(codes));
+        }
+    }
+};
+
+
+
+class BasicVirtualMachine : public ice::arctic::VirtualMachine
+{
+public:
+    void execute(
+        std::vector<ice::arctic::ByteCode> const& bytecode,
+        ice::arctic::ExecutionContext const& context,
+        ice::arctic::ExecutionState& state
+    ) noexcept override
+    {
+        auto it = bytecode.begin();
+        auto const end = bytecode.end();
+
+        // Skip metadata
+        while(it->op.operation == ByteCode::OC_META)
+        {
+            it += 1;
+        }
+
+        assert(it->op.operation == ByteCode::OC_EXEC);
+        it += 1;
+
+        while(it != end)
+        {
+            std::cout << std::hex << (ice::u32) it->byte << '|';
+
+            if (it->op.operation == ByteCode::OC_ADD32)
+            {
+                if (it->op.extension == ByteCode::OE_VALUE)
+                {
+                    ice::u32 const reg = it->op.registr;
+                    it += 1;
+                    registers[reg] += it->byte;
+                }
+                else if (it->op.extension == ByteCode::OE_REG)
+                {
+                    ice::u32 const reg = it->op.registr;
+                    it += 1;
+                    registers[reg] += registers[it->byte];
+                }
+            }
+
+            it += 1;
+        }
+
+        assert((it - 1)->op.operation == ByteCode::OC_END);
+
+        std::cout << "\n" << std::dec << registers[0] << '\n';
+    }
+
+    ice::u32 registers[4]{ };
+};
 
 auto main(int argc, char** argv) -> int
 {
@@ -883,12 +969,16 @@ auto main(int argc, char** argv) -> int
         );
 
 
-        GLSL_Transpiler my_glsl_gen{ };
-        HLSL_Transpiler my_hlsl_gen{ };
+        // GLSL_Transpiler my_glsl_gen{ };
+        // HLSL_Transpiler my_hlsl_gen{ };
+
+        ByteCodeGenerator bcg;
+        BasicVirtualMachine bvm;
 
         ice::arctic::Parser parser;
-        parser.add_visitor(my_glsl_gen);
-        parser.add_visitor(my_hlsl_gen);
+        parser.add_visitor(bcg);
+        // parser.add_visitor(my_glsl_gen);
+        // parser.add_visitor(my_hlsl_gen);
 
         auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -896,6 +986,17 @@ auto main(int argc, char** argv) -> int
 
         auto t2 = std::chrono::high_resolution_clock::now();
 
+        ice::arctic::ExecutionContext global_context;
+        ice::arctic::ExecutionState global_state;
+
+        for (auto const& block : bcg.codeblocks)
+        {
+            std::cout << "Block: " << "\n";
+            bvm.execute(block, global_context, global_state);
+            std::cout << "\n";
+        }
+
+        std::cout << std::dec;
         std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() << "ns" << std::endl;
     }
 

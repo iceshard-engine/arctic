@@ -95,37 +95,6 @@ namespace ice::arctic
                     return node;
                 }
                 return result;
-
-                //static TokenRule const match_struct_member = TokenGroup_MatchAll{ MatchRules_Definition_StructMember };
-
-                //node->entity = SyntaxEntity::DEF_Struct;
-
-                //ice::arctic::SyntaxNode* last_child = nullptr;
-
-                //ice::arctic::ParseResult<ice::arctic::SyntaxNode*> result = match_struct(nullptr, node, token, lexer);
-                //while (result.has_error() == false && token.type != TokenType::CT_SquareBracketClose)
-                //{
-                //    SyntaxNode_StructMember* member = alloc.create<SyntaxNode_StructMember>();
-
-                //    if (last_child == nullptr)
-                //    {
-                //        node->child = member;
-                //        last_child = member;
-                //    }
-                //    else
-                //    {
-                //        last_child->sibling = member;
-                //        last_child = member;
-                //    }
-
-                //    result = match_struct_member(nullptr, member, token, lexer);
-                //}
-
-                //if (result.has_error() == false)
-                //{
-                //    result = node;
-                //}
-                //return result;
             }
 
         } // namespace struct_type

@@ -22,6 +22,8 @@ namespace ice
     using f64 = double;
 
     using uptr = uintptr_t;
+    using usize = u64;
+    using isize = i64;
 
     using String = std::u8string_view;
 
