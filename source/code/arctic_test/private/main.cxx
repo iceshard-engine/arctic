@@ -298,7 +298,7 @@ struct GLSL_Transpiler : ice::arctic::SyntaxVisitorGroup<
     }
     ~GLSL_Transpiler() noexcept
     {
-        std::cout << (const char*)_buffer.c_str() << "\n";
+        // std::cout << (const char*)_buffer.c_str() << "\n";
     }
 
     void visit(ice::arctic::SyntaxNode_Struct const* node) noexcept override
@@ -598,17 +598,17 @@ struct HLSL_Transpiler : ice::arctic::SyntaxVisitorGroup<
     }
     ~HLSL_Transpiler() noexcept
     {
-        std::cout << "\nstruct VertexShaderInputs\n";
-        std::cout << "{\n";
-        std::cout << (const char*)_input_struct.c_str();
-        std::cout << "}\n";
-        std::cout << "\nstruct PixelShaderInputs\n";
-        std::cout << "{\n";
-        std::cout << (const char*)_output_struct.c_str();
-        std::cout << "  float4 out_pos : SV_Position;\n";
-        std::cout << "}\n";
+        // std::cout << "\nstruct VertexShaderInputs\n";
+        // std::cout << "{\n";
+        // std::cout << (const char*)_input_struct.c_str();
+        // std::cout << "}\n";
+        // std::cout << "\nstruct PixelShaderInputs\n";
+        // std::cout << "{\n";
+        // std::cout << (const char*)_output_struct.c_str();
+        // std::cout << "  float4 out_pos : SV_Position;\n";
+        // std::cout << "}\n";
 
-        std::cout << (const char*)_buffer.c_str() << "\n";
+        // std::cout << (const char*)_buffer.c_str() << "\n";
     }
 
     void visit(ice::arctic::SyntaxNode_Struct const* node) noexcept override
@@ -816,6 +816,16 @@ private:
     std::vector<TokenReplacement> _shader_ctx_tokens;
 };
 
+#include <sys/stat.h>
+
+long GetFileSize(std::string filename)
+{
+    struct stat stat_buf;
+    int rc = stat(filename.c_str(), &stat_buf);
+    return rc == 0 ? stat_buf.st_size : -1;
+}
+
+
 auto main(int argc, char** argv) -> int
 {
     if (argc < 2)
@@ -847,11 +857,18 @@ auto main(int argc, char** argv) -> int
     FILE* f = fopen(argv[1], "rb+");
     if (f != 0)
     {
+        size_t const file_size = GetFileSize(argv[1]);
+
+        if (file_size != 0)
+        {
+            contents = Buffer<ice::utf8>{ file_size + 10u };
+            memset(contents._buffer, 0, file_size + 10u);
+
+            fread(contents._buffer, sizeof(ice::utf8), file_size, f);
+        }
         fclose(f);
     }
 #endif
-
-    ice::u32 token_count = 0;
 
     ice::arctic::WordMatcher matcher{ };
     ice::arctic::initialize_ascii_matcher(&matcher);
@@ -879,8 +896,7 @@ auto main(int argc, char** argv) -> int
 
         auto t2 = std::chrono::high_resolution_clock::now();
 
-        std::cout << "Tokens: " << token_count << std::endl;
-        std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count() << "ms" << std::endl;
+        std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() << "ns" << std::endl;
     }
 
     ice::arctic::shutdown_matcher(&matcher);

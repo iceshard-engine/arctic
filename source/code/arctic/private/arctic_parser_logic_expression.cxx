@@ -51,27 +51,6 @@ namespace ice::arctic::rules
         TokenGroup_MatchFirst{ MatchRules_ExpBinaryOperations }
     };
 
-
-    auto match_call_expression(
-        void const* ud,
-        ice::arctic::ParseState fail_state,
-        ice::arctic::SyntaxNodeAllocator* alloc,
-        ice::arctic::SyntaxNode* node,
-        ice::arctic::Token& token,
-        ice::arctic::Lexer& lexer
-    ) noexcept -> ice::arctic::ParseState;
-
-    static ice::arctic::TokenRule const MatchRules_ExpCallExpression[]{
-        ice::arctic::TokenRule{
-            .optional = false,
-            .repeat = false,
-            .fail_state = ParseState::Error,
-            .userdata = nullptr,
-            .func = match_call_expression
-        }
-    };
-
-
     static ice::arctic::TokenRule const MatchRules_ExpBinaryLeftAndOperation[]{
         TokenGroup_MatchSibling{ SyntaxNode_ExpressionValue{ }, MatchRules_ExpValue },
         TokenGroup_MatchSibling{ SyntaxNode_ExpressionBinaryOperation{}, MatchRules_ExpBinaryOperation, true },
