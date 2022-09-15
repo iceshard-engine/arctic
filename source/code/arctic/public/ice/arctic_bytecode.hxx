@@ -12,7 +12,8 @@ namespace ice::arctic
             OC_META,
 
             OC_EXEC,
-            OC_MOVE,
+            OC_MOVR,
+            OC_MOVA,
             OC_ADD32,
             OC_ADD64,
             OC_END,

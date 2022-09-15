@@ -7,7 +7,7 @@ fn foo() : i32
 
 fn foo_with() : i32
 {
-    foo_with = 421
+    foo_with = 421 + 1
 }
 
 fn foo_with_うにこど() : i32

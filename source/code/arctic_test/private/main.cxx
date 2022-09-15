@@ -832,7 +832,49 @@ using ice::arctic::TokenType;
 using ice::arctic::ByteCode;
 using ice::arctic::SyntaxEntity;
 
-auto create_symbol(std::u8string_view sv) noexcept -> std::vector<ice::arctic::ByteCode>
+struct Symbol
+{
+    std::vector<ice::arctic::ByteCode> bcrep;
+
+    inline bool operator!=(Symbol const& other) const noexcept
+    {
+        auto const eqfn = [&]() noexcept
+        {
+            ice::u32 const size =  bcrep.size();
+            bool is_same = true;
+            for (ice::u32 idx = 0; is_same && idx < size; ++idx)
+            {
+                is_same &= (other.bcrep[idx].byte == bcrep[idx].byte);
+            }
+            return is_same;
+        };
+
+        return other.bcrep.size() != bcrep.size() || eqfn() == false;
+    }
+
+    inline bool operator==(Symbol const& other) const noexcept
+    {
+        return ((*this) != other) == false;
+    }
+};
+
+namespace std
+{
+    template <>
+    struct hash<Symbol>
+    {
+        using argument_type = Symbol;
+        using result_type = size_t;
+
+        result_type operator() (const argument_type& symbol) const
+        {
+            std::string_view const sv{ (char const*) &symbol.bcrep[0], symbol.bcrep.size() * 4 };
+            return std::hash<std::string_view>{ }(sv);
+        }
+    };
+}
+
+auto create_symbol(std::u8string_view sv) noexcept -> Symbol
 {
     std::vector<ice::arctic::ByteCode> result;
 
@@ -864,13 +906,129 @@ auto create_symbol(std::u8string_view sv) noexcept -> std::vector<ice::arctic::B
         result.push_back(ByteCode::Value{ byte });
     }
     // std::cout << "\n" << result.size() << "\n";
-    return result;
+    return { result };
 }
 
 struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 {
     std::vector<ByteCode> scriptcode;
     std::vector<std::vector<ByteCode>> codeblocks;
+
+    std::unordered_map<Symbol, ByteCode::Addr> variables;
+
+    void generate_bytecode_expression(
+        ice::arctic::SyntaxNode const* node,
+        std::vector<ByteCode>& codes
+    ) noexcept
+    {
+        assert(node->entity == SyntaxEntity::EXP_Expression);
+        node = node->child;
+
+        // ByteCode::Addr addr{ 0 };
+        ice::arctic::SyntaxNode_ExpressionValue const* tar_var = nullptr;
+
+        ice::arctic::SyntaxNode const* prev = nullptr;
+        if(node->entity == SyntaxEntity::EXP_Value)
+        {
+            tar_var = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(node);
+            assert(tar_var->value.type == TokenType::CT_Symbol);
+            prev = node;
+            node = node->sibling;
+
+            // auto var_sym = create_symbol(val->value.value);
+            // assert(variables.contains(var_sym));
+
+            // addr = variables.at(var_sym);
+            // if (addr.loc == 0)
+            // {
+            //     code = ByteCode::OC_MOVR;
+            //     ext = ByteCode::OE_REG;
+            //     reg = ByteCode::OR_R0;
+            // }
+            // else
+            // {
+            //     code = ByteCode::OC_MOVA;
+            //     ext = ByteCode::OE_ADDR;
+            // }
+
+            // assert(node->entity == SyntaxEntity::EXP_BinaryOperation);
+            // prev = node;
+            // node = node->sibling;
+        }
+
+        // ByteCode::OpCode code = ByteCode::OC_NOOP;
+        // ByteCode::OpExt ext = ByteCode::OE_NONE;
+        // ByteCode::OpReg reg = ByteCode::OR_VOID;
+
+        while(node != nullptr)
+        {
+            if (node->entity == SyntaxEntity::EXP_BinaryOperation)
+            {
+                auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
+                auto const* src = node->sibling;
+
+                assert(src != nullptr);
+
+                ByteCode srcbc;
+                ByteCode::OpExt src_ext = ByteCode::OE_NONE;
+                if (src->entity == SyntaxEntity::EXP_Value)
+                {
+                    auto const srcv = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(src);
+                    if (srcv->value.type == TokenType::CT_Number)
+                    {
+                        ice::u32 const num_val = atol((char const*)srcv->value.value.data());
+                        src_ext = ByteCode::OE_VALUE;
+                        srcbc = ByteCode::Value{ num_val };
+                    }
+                }
+
+                if (binop->operation.type == TokenType::OP_Assign)
+                {
+                    assert(prev != nullptr && prev->entity == SyntaxEntity::EXP_Value);
+                    auto const destv = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(prev);
+                    assert(destv->value.type == TokenType::CT_Symbol);
+                    auto const destv_sym = create_symbol(destv->value.value);
+
+                    [[maybe_unused]]
+                    ByteCode::Addr const addr = variables.at(destv_sym);
+
+                    codes.push_back(ByteCode{ ByteCode::OC_MOVR, src_ext, ByteCode::OR_R0 });
+                    codes.push_back(srcbc);
+                    codes.push_back(ByteCode{ ByteCode::OC_ADD32, ByteCode::OE_VALUE, ByteCode::OR_R0 });
+                    codes.push_back(ByteCode::Value{ 10 });
+                    codes.push_back(ByteCode{ ByteCode::OC_MOVA, ByteCode::OE_REG, ByteCode::OR_VOID });// OR_R0
+                    codes.push_back(addr);
+                    codes.push_back(ByteCode::Value{ ByteCode::OR_R0 });
+                }
+                else if (binop->operation.type == TokenType::OP_Plus)
+                {
+
+                }
+            }
+            else
+            {
+                prev = node;
+            }
+
+            // if (node->entity == SyntaxEntity::EXP_Value)
+            // {
+            //     auto const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(node);
+            //     if (val->value.type == TokenType::CT_Symbol)
+            //     {
+            //         auto var_sym = create_symbol(val->value.value);
+            //         assert(variables.contains(var_sym));
+            //     }
+            //     else if (val->value.type == TokenType::CT_Number)
+            //     {
+
+            //     }
+            // }
+
+            node = node->sibling;
+        }
+
+        // codes.push_back(ByteCode{ ByteCode::OC_MOVR, ext, reg });
+    }
 
     void visit(ice::arctic::SyntaxNode const* node) noexcept override
     {
@@ -884,8 +1042,9 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 
             auto symbol = create_symbol(fn->name.value);
             {
-                scriptcode.push_back(ByteCode::Value{ (ice::u32) symbol.size() });
-                scriptcode.insert(scriptcode.end(), symbol.begin(), symbol.end());
+                scriptcode.push_back(ByteCode::Value{ (ice::u32) symbol.bcrep.size() });
+                scriptcode.insert(scriptcode.end(), symbol.bcrep.begin(), symbol.bcrep.end());
+                variables.emplace(symbol, ByteCode::Addr{ 0 });
             }
 
             if (node->sibling && node->sibling->child)
@@ -897,45 +1056,48 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 while(exp != nullptr)
                 {
                     codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
-                    codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 64 /*stack_size*/ }, ByteCode::OR_VOID });
+                    // codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 0 /*result_size*/ }, ByteCode::OR_VOID });
+                    codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 4 /*stack_size*/ }, ByteCode::OR_VOID });
                     codes.push_back(ByteCode::Op{ ByteCode::OC_EXEC, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
 
                     if (exp->entity == SyntaxEntity::EXP_Expression)
                     {
-                        std::cout << to_string(exp->entity) << "\n";
-                        ice::arctic::SyntaxNode const* exp_child = exp->child;
-                        std::cout << to_string(exp_child->entity) << "\n";
+                        generate_bytecode_expression(exp, codes);
 
-                        if (exp_child->entity == SyntaxEntity::EXP_Value)
-                        {
-                            ice::arctic::SyntaxNode_ExpressionValue const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(exp_child);
+                        // std::cout << to_string(exp->entity) << "\n";
+                        // ice::arctic::SyntaxNode const* exp_child = exp->child;
+                        // std::cout << to_string(exp_child->entity) << "\n";
 
-                            auto value_symbol = create_symbol(val->value.value);
-                            assert(val->value.type == TokenType::CT_Symbol);
+                        // if (exp_child->entity == SyntaxEntity::EXP_Value)
+                        // {
+                        //     ice::arctic::SyntaxNode_ExpressionValue const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(exp_child);
 
-                            if (value_symbol.size() != symbol.size())
-                            {
-                                exp = exp->sibling;
-                                continue;
-                            }
-                            // std::cout << () << std::endl;
-                        }
+                        //     auto value_symbol = create_symbol(val->value.value);
+                        //     assert(val->value.type == TokenType::CT_Symbol);
 
-                        exp_child = exp_child->sibling;
-                        std::cout << to_string(exp_child->entity) << "\n";
-                        assert(exp_child->entity == SyntaxEntity::EXP_BinaryOperation);
+                        //     if (value_symbol != symbol)
+                        //     {
+                        //         exp = exp->sibling;
+                        //         continue;
+                        //     }
+                        //     // std::cout << () << std::endl;
+                        // }
 
-                        exp_child = exp_child->sibling;
-                        std::cout << to_string(exp_child->entity) << "\n";
-                        assert(exp_child->entity == SyntaxEntity::EXP_Value);
+                        // exp_child = exp_child->sibling;
+                        // std::cout << to_string(exp_child->entity) << "\n";
+                        // assert(exp_child->entity == SyntaxEntity::EXP_BinaryOperation);
 
-                        ice::arctic::SyntaxNode_ExpressionValue const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(exp_child);
-                        assert(val->value.type == TokenType::CT_Number);
+                        // exp_child = exp_child->sibling;
+                        // std::cout << to_string(exp_child->entity) << "\n";
+                        // assert(exp_child->entity == SyntaxEntity::EXP_Value);
 
-                        codes.push_back(ByteCode::Op{ ByteCode::OC_MOVE, ByteCode::OE_VALUE, ByteCode::OR_R0 });
+                        // ice::arctic::SyntaxNode_ExpressionValue const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(exp_child);
+                        // assert(val->value.type == TokenType::CT_Number);
 
-                        ice::u32 const num_val = atol((char const*)val->value.value.data());
-                        codes.push_back(ByteCode::Value{ num_val });
+                        // codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_R0 });
+
+                        // ice::u32 const num_val = atol((char const*)val->value.value.data());
+                        // codes.push_back(ByteCode::Value{ num_val });
                     }
 
                     exp = exp->sibling;
@@ -979,10 +1141,13 @@ public:
         auto const end = bytecode.end();
 
         // Skip metadata
-        while(it->op.operation == ByteCode::OC_META)
-        {
-            it += 1;
-        }
+        assert(it->op.operation == ByteCode::OC_META && it->op.extension == 1);
+        it += 1;
+        assert(it->op.operation == ByteCode::OC_META && it->op.extension != 0);
+        char* memory = new char[it->op.extension];
+        it += 1;
+
+
 
         assert(it->op.operation == ByteCode::OC_EXEC);
         it += 1;
@@ -1006,7 +1171,24 @@ public:
                     registers[reg] += registers[it->byte];
                 }
             }
-            else if (it->op.operation == ByteCode::OC_MOVE)
+            else if (it->op.operation == ByteCode::OC_MOVA)
+            {
+                ByteCode::OpExt const ext = it->op.extension;
+                it += 1;
+
+                void* const mem = memory + it->byte;
+                it += 1;
+
+                if (ext == ByteCode::OE_VALUE)
+                {
+                    *((ice::u32*)mem) = it->byte;
+                }
+                else if (ext == ByteCode::OE_REG)
+                {
+                    *((ice::u32*)mem) = registers[it->byte];
+                }
+            }
+            else if (it->op.operation == ByteCode::OC_MOVR)
             {
                 if (it->op.extension == ByteCode::OE_VALUE)
                 {
@@ -1027,7 +1209,8 @@ public:
 
         assert((it - 1)->op.operation == ByteCode::OC_END);
 
-        std::cout << "\n" << std::dec << registers[0] << '\n';
+        std::cout << "\n" << std::dec << *((ice::u32*)memory) << '\n';
+        delete[] memory;
     }
 
     ice::u32 registers[4]{ };
