@@ -4,3 +4,13 @@ fn foo() : i32
 {
     foo = 42
 }
+
+fn foo_with() : i32
+{
+    foo_with = 421
+}
+
+fn foo_with_うにこど() : i32
+{
+    foo_with_うにこど = 423
+}

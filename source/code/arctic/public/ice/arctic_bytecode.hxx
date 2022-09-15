@@ -10,17 +10,21 @@ namespace ice::arctic
         {
             OC_NOOP,
             OC_META,
-            OC_EXEC,
-            OC_END,
 
+            OC_EXEC,
+            OC_MOVE,
             OC_ADD32,
             OC_ADD64,
+            OC_END,
         };
         enum OpExt : ice::u8
         {
             OE_NONE,
             OE_REG,
+            OE_ADDR,
             OE_VALUE,
+
+            OE_META_SYMBOL,
         };
         enum OpReg : ice::u8
         {
