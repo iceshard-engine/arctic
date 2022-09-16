@@ -2,7 +2,7 @@ context Script
 
 fn foo() : i32
 {
-    foo = 42
+    foo = 3 + 1 * 2 * 3 - 1 * 2 * 3
 }
 
 fn foo_with() : i32
@@ -10,7 +10,7 @@ fn foo_with() : i32
     let x : i32 = 1
     let y : i32 = 2
 
-    foo_with = x + 100 + y
+    foo_with = 3 + 1 * 2
 }
 
 fn foo_with_うにこど() : i32

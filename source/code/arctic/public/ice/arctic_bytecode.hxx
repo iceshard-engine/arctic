@@ -12,13 +12,21 @@ namespace ice::arctic
             OC_META,
 
             OC_EXEC,
+
             OC_MOVR,
             OC_MOVA,
             OC_MOVS,
+
             OC_ADD32,
-            OC_ADD64,
             OC_SUB32,
+            OC_MUL32,
+            OC_DIV32,
+
+            OC_ADD64,
             OC_SUB64,
+            OC_MUL64,
+            OC_DIV64,
+
             OC_END,
         };
         enum OpExt : ice::u8
