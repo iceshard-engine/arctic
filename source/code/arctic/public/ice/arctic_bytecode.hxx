@@ -14,23 +14,33 @@ namespace ice::arctic
             OC_EXEC,
             OC_MOVR,
             OC_MOVA,
+            OC_MOVS,
             OC_ADD32,
             OC_ADD64,
+            OC_SUB32,
+            OC_SUB64,
             OC_END,
         };
         enum OpExt : ice::u8
         {
             OE_NONE,
             OE_REG,
+            OE_STACK,
             OE_ADDR,
             OE_VALUE,
+            OE_VALUE_SP,
+            OE_64BIT,
 
             OE_META_SYMBOL,
         };
         enum OpReg : ice::u8
         {
             OR_R0, OR_R1, OR_R2, OR_R3,
-            OR_VOID,
+            OR_R4, OR_R5, OR_R6, OR_R7,
+            OR_R8, OR_R9, OR_R10, OR_R11,
+            OR_R12, OR_R13, OR_R14, OR_R15,
+
+            OR_PTR, OR_TP, OR_SP, OR_VOID,
         };
         struct OpAddress
         {

@@ -7,7 +7,10 @@ fn foo() : i32
 
 fn foo_with() : i32
 {
-    foo_with = 421 + 1
+    let x : i32 = 1
+    let y : i32 = 2
+
+    foo_with = x + 100 + y
 }
 
 fn foo_with_うにこど() : i32
