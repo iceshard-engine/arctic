@@ -113,4 +113,32 @@ namespace ice::arctic
         return bc;
     }
 
+    static constexpr auto to_string(ByteCode::OpCode code) noexcept -> std::string_view
+    {
+        switch(code)
+        {
+            case ByteCode::OpCode::OC_NOOP: return "NOOP";
+            case ByteCode::OpCode::OC_META: return "META";
+
+            case ByteCode::OpCode::OC_EXEC: return "EXEC";
+
+            case ByteCode::OpCode::OC_MOVR: return "MOV[R]";
+            case ByteCode::OpCode::OC_MOVA: return "MOV[A]";
+            case ByteCode::OpCode::OC_MOVS: return "MOV[S]";
+
+            case ByteCode::OpCode::OC_ADD32: return "ADD[32]";
+            case ByteCode::OpCode::OC_SUB32: return "SUB[32]";
+            case ByteCode::OpCode::OC_MUL32: return "MUL[32]";
+            case ByteCode::OpCode::OC_DIV32: return "DIV[32]";
+
+            case ByteCode::OpCode::OC_ADD64: return "ADD[64]";
+            case ByteCode::OpCode::OC_SUB64: return "SUB[64]";
+            case ByteCode::OpCode::OC_MUL64: return "MUL[64]";
+            case ByteCode::OpCode::OC_DIV64: return "DIV[64]";
+
+            case ByteCode::OpCode::OC_END: return "END";
+        }
+        return "<unknown>";
+    }
+
 } // namespace ice::arctic

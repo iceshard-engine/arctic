@@ -5,6 +5,10 @@
 namespace ice::arctic
 {
 
+    struct SyntaxNode;
+
+    auto dbg_to_string(ice::arctic::SyntaxNode const* node) noexcept -> std::string;
+
     struct SyntaxNode
     {
         ice::arctic::SyntaxEntity entity;

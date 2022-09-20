@@ -994,6 +994,7 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 auto symbol = create_symbol(vnode->value.value);
                 assert(variables.contains(symbol));
 
+                fmt::print("{} == {}\n", dbg_to_string(vnode), variables.at(symbol).loc);
                 // R[X] = [OR_PTR]
                 codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
                 codes.push_back(variables.at(symbol));
@@ -1017,24 +1018,24 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
         }
     }
 
-    void generate_bytecode_expression_assign_op(
-        ice::arctic::SyntaxNode const* node,
-        ice::arctic::ByteCode::OpExt extension,
-        // ice::arctic::ByteCode::Addr address,
-        std::vector<ByteCode>& codes
-    ) noexcept
-    {
-        assert(extension != ByteCode::OE_64BIT);
-        assert(node->entity == SyntaxEntity::EXP_BinaryOperation);
-        auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
-        assert(binop->operation.type == TokenType::OP_Assign);
+    // void generate_bytecode_expression_assign_op(
+    //     ice::arctic::SyntaxNode const* node,
+    //     ice::arctic::ByteCode::OpExt extension,
+    //     // ice::arctic::ByteCode::Addr address,
+    //     std::vector<ByteCode>& codes
+    // ) noexcept
+    // {
+    //     assert(extension != ByteCode::OE_64BIT);
+    //     assert(node->entity == SyntaxEntity::EXP_BinaryOperation);
+    //     auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
+    //     assert(binop->operation.type == TokenType::OP_Assign);
 
-        if (extension == ByteCode::OE_REG)
-        {
-            // [OR_PTR] = R0
-            codes.push_back(ByteCode::Op{ ByteCode::OC_MOVA, ByteCode::OE_REG, ByteCode::OR_R0 });
-        }
-    }
+    //     if (extension == ByteCode::OE_REG)
+    //     {
+    //         // [OR_PTR] = R0
+    //         codes.push_back(ByteCode::Op{ ByteCode::OC_MOVA, ByteCode::OE_REG, ByteCode::OR_R0 });
+    //     }
+    // }
 
     void generate_bytecode_expression_native_op(
         ice::arctic::SyntaxNode const* node,
@@ -1080,6 +1081,92 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
         }
     }
 
+    template<bool LeftSide>
+    void generate_bytecode_from_span(
+        ice::arctic::SyntaxNode const* from,
+        ice::arctic::SyntaxNode const* to,
+        std::vector<ByteCode>& codes,
+        ice::u32 last_level
+    ) noexcept
+    {
+        if constexpr (LeftSide)
+        {
+            if (from->entity == SyntaxEntity::EXP_Value)
+            {
+                // fmt::print("{} {:<{}}{}\n", LeftSide ? "<$" : "$>", "|", last_level * 2, dbg_to_string(from));
+                generate_bytecode_expression_arg_reg(from, ByteCode::OR_R0, codes);
+                from = from->sibling;
+            }
+
+            while(from != to)
+            {
+                if (from->entity == SyntaxEntity::EXP_Value)
+                {
+                    assert(false);
+                }
+                else if (from->entity == SyntaxEntity::EXP_BinaryOperation)
+                {
+                    // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+
+                    if (from->sibling != to)
+                    {
+                        // assert(from->sibling != to);
+                        generate_bytecode_expression_arg_reg(from->sibling, ByteCode::OR_R1, codes);
+                    }
+
+                    generate_bytecode_expression_native_op(from, ByteCode::OE_NONE, codes);
+
+                    if (from->sibling != to)
+                    {
+                        from = from->sibling;
+                        // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+                    }
+                }
+
+                // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+                from = from->sibling;
+            }
+        }
+        else
+        {
+            if (from->entity == SyntaxEntity::EXP_Value)
+            {
+                // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+                generate_bytecode_expression_arg_reg(from, ByteCode::OR_R0, codes);
+                from = from->sibling;
+            }
+
+            while(from != to)
+            {
+                if (from->entity == SyntaxEntity::EXP_Value)
+                {
+                    assert(false);
+                    //generate_bytecode_expression_arg_reg(from, ByteCode::OR_R1, codes);
+                }
+                else if (from->entity == SyntaxEntity::EXP_BinaryOperation)
+                {
+                    // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+
+                    if (from->sibling != to)
+                    {
+                        assert(from->sibling != to);
+                        generate_bytecode_expression_arg_reg(from->sibling, ByteCode::OR_R1, codes);
+                    }
+
+                    generate_bytecode_expression_native_op(from, ByteCode::OE_NONE, codes);
+
+                    if (from->sibling != to)
+                    {
+                        from = from->sibling;
+                        // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+                    }
+                }
+
+                // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
+                from = from->sibling;
+            }
+        }
+    }
 
     auto traverse_expression_tree(
         ice::arctic::SyntaxNode const* node,
@@ -1096,26 +1183,66 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
             {
                 auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(next);
 
-                std::string_view opv{(char const*)binop->operation.value.data(), binop->operation.value.size()};
-                // std::cout << last_level << " " << opv << std::endl;
-
                 ice::u32 const new_level = get_operation_level(binop);
                 if (new_level > last_level)
                 {
-                    next = traverse_expression_tree(node, codes, new_level);
-
-                    std::cout << "---\n";
-                    ice::u32 idx = 0;
-                    while(first != node)
+                    // We enter this if we have already generated bytecode resulting in a value on R0
+                    if (node != first)
                     {
-                        std::cout << last_level << " " << idx++ << std::endl;
-                        first = first->sibling;
+                        // std::cout << "YUCK!\n";
+
+                        auto it = first;
+                        while(it != node && it->sibling != node)
+                        {
+                            it = it->sibling;
+                        }
+
+                        // (1) We calculate anything that is still remaining and aligned with the current prio level
+                        if (first != it)
+                        {
+                            generate_bytecode_from_span<false>(first, it, codes, last_level);
+                            first = it;
+                        }
+
+                        // (2) Move anything we have calculated until now, onto the stack. (if we have just a single operator as the first node)
+                        if (first->entity == SyntaxEntity::EXP_BinaryOperation)
+                        {
+                            // std::cout << "BOO!\n";
+                            codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_R0 });
+                            codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 });
+                        }
                     }
 
+                    // std::cout << "ENTER : " << dbg_to_string(node) << std::endl;
+
+                    // (3) We execute the next sub-tree
+                    next = traverse_expression_tree(node, codes, new_level);
+
+                    // (4) We move the result to the right side and load the stack safed value on the left side again.
+                    if (node != first)
+                    {
+                        // std::cout << "YUCK 2!\n";
+
+                        // (5) if the first is an operator then we need to move values around.
+                        if (first->entity == SyntaxEntity::EXP_BinaryOperation)
+                        {
+                            // (6) Move R0 to R1 (we just calculated the right side)
+                            codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_REG, ByteCode::OR_R1 });
+                            codes.push_back(ByteCode::Value{ ByteCode::OR_R0 });
+
+                            // (7) Load the value from the stack into R0
+                            codes.push_back(ByteCode::Op{ ByteCode::OC_SUB32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 });
+                            codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_STACK, ByteCode::OR_R0 });
+                        }
+
+                        // (8) Execute the code.
+                        generate_bytecode_from_span<true>(first, node, codes, last_level);
+                    }
                     first = next;
                 }
                 else if (new_level < last_level)
                 {
+                    node = next;
                     break;
                 }
             }
@@ -1123,255 +1250,23 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
             node = next;
         }
 
-        std::cout << "---\n";
-        ice::u32 idx = 0;
-        while(first != node)
+        if (first != nullptr)
         {
-                        std::cout << last_level << " " << idx++ << std::endl;
-            first = first->sibling;
+            generate_bytecode_from_span<false>(first, node, codes, last_level);
         }
-
+        // std::cout << "EXIT" << std::endl;
         return node;
-    }
-
-    // auto generate_bytecode_expression_ln(
-    //     ice::arctic::SyntaxNode const* node,
-    //     std::vector<ByteCode>& codes,
-    //     ice::u32 last_level
-    // ) noexcept -> ice::arctic::SyntaxNode const*
-    // {
-    //     while(node != nullptr)
-    //     {
-    //         ice::arctic::SyntaxNode const* next = node->sibling;
-
-    //         if (node->entity == SyntaxEntity::EXP_Value)
-    //         {
-    //             auto const* val = static_cast<ice::arctic::SyntaxNode_ExpressionValue const*>(node);
-    //             std::cout << last_level << " value: " <<  std::string_view{(char const*)val->value.value.data(), val->value.value.size()} << std::endl;
-
-    //             if (last_level == 0)
-    //             {
-    //                 generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-    //             }
-    //             else
-    //             {
-    //                 generate_bytecode_expression_arg_reg(node, ByteCode::OR_R1, codes);
-    //             }
-    //         }
-    //         else if (node->entity == SyntaxEntity::EXP_UnaryOperation)
-    //         {
-    //             // assert(last_level == 0);
-
-    //             auto const* unnop = static_cast<ice::arctic::SyntaxNode_ExpressionUnaryOperation const*>(node);
-    //             assert(unnop != nullptr && false);
-    //         }
-    //         else if (node->entity == SyntaxEntity::EXP_BinaryOperation)
-    //         {
-    //             auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
-    //             ice::u32 const new_level = get_operation_level(binop);
-
-    //             std::string_view opv{(char const*)binop->operation.value.data(), binop->operation.value.size()};
-    //             std::cout << last_level << " " << new_level << " " << opv << std::endl;
-
-    //             if (last_level < new_level)
-    //             {
-    //                 if (last_level != 0)
-    //                 {
-    //                     // (1) If we step into higher prio, store the current R0 on the stack.
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_R0 });
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 });
-
-    //                     // (2) Move R1 into R0
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_REG, ByteCode::OR_R0 });
-    //                     codes.push_back(ByteCode::Value{ ByteCode::OR_R1 });
-    //                 }
-
-    //                 // (3) Recursive, try to solve this operation with new prio
-    //                 next = generate_bytecode_expression_ln(node, codes, new_level);
-
-    //                 // (4) Execute this operation
-    //                 // generate_bytecode_expression_native_op(node, ByteCode::OE_NONE, codes);
-
-    //                 if (last_level != 0)
-    //                 {
-    //                     // (5) Move R0 to R1
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_REG, ByteCode::OR_R1 });
-    //                     codes.push_back(ByteCode::Value{ ByteCode::OR_R0 });
-
-    //                     // (6) Pop back the value to R0
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_SUB32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 });
-    //                     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_STACK, ByteCode::OR_R0 });
-    //                 }
-    //             }
-    //             else if (last_level == new_level)
-    //             {
-    //                 // (1) Recursive, try to solve this operation with new prio
-    //                 // next = generate_bytecode_expression_ln(next, codes, new_level);
-    //                 generate_bytecode_expression_arg_reg(next, ByteCode::OR_R1, codes);
-
-    //                 // (2) Execute this operation
-    //                 generate_bytecode_expression_native_op(node, ByteCode::OE_NONE, codes);
-
-    //                 // (3) new next
-    //                 next = next->sibling;
-    //             }
-    //             else
-    //             {
-    //                 return node;
-    //                 // return next;
-    //                 // node = next;
-    //                 // break;`
-    //             }
-    //         }
-
-    //         node = next;
-    //     }
-
-    //     return node;
-    // }
-
-    auto generate_bytecode_expression_ln(
-        ice::arctic::SyntaxNode const* node,
-        ice::arctic::SyntaxNode const* prev,
-        std::vector<ByteCode>& codes,
-        ice::u32 last_level
-    ) noexcept -> ice::u32
-    {
-        while (node != nullptr)
-        {
-            if (prev->entity == SyntaxEntity::EXP_BinaryOperation)
-            {
-                // TODO: Assignment operations should have their expressions as a child tree.
-                auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(prev);
-
-
-                // 1 + 2 * 3
-                // ----x
-                //     |----
-
-                // 1 + 2 * 3 * 4
-                // ----x
-                //     |--------
-
-                // 1 + 2 * 3 * 4 - 1
-                // ----x         +--
-                //     |----------
-
-                ice::u32 const cur_level = get_operation_level(binop);
-                ice::u32 next_level = cur_level;
-                if (node->sibling != nullptr)
-                {
-                    assert(node->sibling->sibling != nullptr);
-                    next_level = generate_bytecode_expression_ln(node->sibling->sibling, node->sibling, codes, next_level);
-
-                    if (cur_level == next_level)
-                    {
-                        generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-                        generate_bytecode_expression_arg_reg(node->sibling->sibling, ByteCode::OR_R1, codes);
-                    }
-                    else if (cur_level < next_level)
-                    {
-                        codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_R1 });
-                        codes.push_back(ByteCode::Value{ ByteCode::OR_R0 });
-                        generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-                    }
-                    else if (cur_level > next_level)
-                    {
-                        generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-                    }
-                }
-
-                //   1 + 2 * 3
-                // 1   1   2
-
-                //   1 + 2 * 3 * 4
-                // 1   1   2   2
-
-                //   1 + 2 * 3 * 4 - 1
-                // 1   1   2   2   1
-
-                if (last_level >= next_level)
-                {
-                    // codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_R0 });
-                    // codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 });
-                }
-
-                // Calc RHS (LHS is always the reuslt of the previous OP)
-                // generate_bytecode_expression_arg_reg(node, ByteCode::OR_R1, codes);
-                generate_bytecode_expression_native_op(prev, ByteCode::OE_NONE, codes);
-
-                // generate_bytecode_expression_ln(node->sibling, node->sibling->sibling, codes, cur_level);
-            }
-
-            prev = node;
-            node = node->sibling;
-        }
-        return last_level;
     }
 
     void generate_bytecode_expression_l0(
         ice::arctic::SyntaxNode const* node,
         std::vector<ByteCode>& codes,
+        ByteCode::Addr address,
         bool assign_result = false
     ) noexcept
     {
         assert(node->entity == SyntaxEntity::EXP_Expression);
         node = node->child;
-
-        // ice::arctic::SyntaxNode const* prev = nullptr;
-
-        // // First arg (LHS) is done outside of the loop
-        // if (node->entity == SyntaxEntity::EXP_Value)
-        // {
-        //     generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-        //     prev = node;
-        //     node = node->sibling;
-
-        //     if (node->entity == SyntaxEntity::EXP_BinaryOperation)
-        //     {
-        //         // TODO: Assignment operations should have their expressions as a child tree.
-        //         auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
-        //         assign_result = binop->operation.type == TokenType::OP_Assign;
-        //     }
-        // }
-        // else
-        // {
-        //     prev = node;
-        //     node = node->sibling;
-        // }
-
-        // if (assign_result)
-        // {
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_PTR });
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 /* should be number == 4 */ });
-        // }
-
-        // generate_bytecode_expression_ln(node, prev, codes, 1);
-
-        // First arg (LHS) is done outside of the loop
-        // if (node->entity == SyntaxEntity::EXP_Value)
-        // {
-        //     generate_bytecode_expression_arg_reg(node, ByteCode::OR_R0, codes);
-        //     node = node->sibling;
-
-        //     if (node->entity == SyntaxEntity::EXP_BinaryOperation)
-        //     {
-        //         // TODO: Assignment operations should have their expressions as a child tree.
-        //         auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
-        //         assign_result = binop->operation.type == TokenType::OP_Assign;
-        //     }
-        // }
-        // else
-        // {
-        //     // prev = node;
-        //     node = node->sibling;
-        // }
-
-        // if (assign_result)
-        // {
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVS, ByteCode::OE_REG, ByteCode::OR_PTR });
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_ADD32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 /* should be number == 4 */ });
-        // }
 
         // First arg (LHS) is done outside of the loop
         ice::arctic::SyntaxNode* first_node = nullptr;
@@ -1392,11 +1287,9 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 
         assert(first_node != nullptr);
 
-        // node = node->sibling;
-        // `std::cout << assign_result << std::endl;
         if (assign_result)
         {
-            traverse_expression_tree(first_node, codes, 0);
+            traverse_expression_tree(first_node, codes, 1);
 
             if (node->entity == SyntaxEntity::EXP_Value)
             {
@@ -1404,44 +1297,18 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
                 codes.push_back(variables.at(symbol));
             }
+            else
+            {
+                assert(address.loc != 0);
+                codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
+                codes.push_back(address);
+            }
             codes.push_back(ByteCode::Op{ ByteCode::OC_MOVA, ByteCode::OE_REG, ByteCode::OR_R0 });
         }
         else
         {
-            traverse_expression_tree(node, codes, 0);
+            traverse_expression_tree(node, codes, 1);
         }
-
-        // while(node != nullptr)
-        // {
-        //     if (prev->entity == SyntaxEntity::EXP_BinaryOperation)
-        //     {
-        //         // TODO: Assignment operations should have their expressions as a child tree.
-        //         auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(prev);
-
-        //         // Calc RHS (LHS is always the reuslt of the previous OP)
-        //         generate_bytecode_expression_arg_reg(node, ByteCode::OR_R1, codes);
-
-        //         if (binop->operation.type != TokenType::OP_Assign)
-        //         {
-        //             generate_bytecode_expression_native_op(prev, ByteCode::OE_NONE, codes);
-        //         }
-        //         else
-        //         {
-        //             codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_REG, ByteCode::OR_R0 });
-        //             codes.push_back(ByteCode::Value{ ByteCode::OR_R1 });
-        //         }
-        //     }
-
-        //     prev = node;
-        //     node = node->sibling;
-        // }
-
-        // if (assign_result)
-        // {
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_SUB32, ByteCode::OE_VALUE_SP, ByteCode::OR_R4 /* should be number == 4 */ });
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_STACK, ByteCode::OR_PTR });
-        //     codes.push_back(ByteCode::Op{ ByteCode::OC_MOVA, ByteCode::OE_REG, ByteCode::OR_R0 });
-        // }
     }
 
     void visit(ice::arctic::SyntaxNode const* node) noexcept override
@@ -1454,6 +1321,7 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 
             scriptcode.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OE_META_SYMBOL, ByteCode::OR_VOID });
 
+            variables.clear();
             auto symbol = create_symbol(fn->name.value);
             {
                 scriptcode.push_back(ByteCode::Value{ (ice::u32) symbol.bcrep.size() });
@@ -1467,33 +1335,33 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 
                 ice::arctic::SyntaxNode const* exp = node->sibling->child;
 
+                codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
+                codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 32 /*stack_size*/ }, ByteCode::OR_VOID });
+                codes.push_back(ByteCode::Op{ ByteCode::OC_EXEC, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
+
                 ice::u32 var_addr = 4;
                 while(exp != nullptr)
                 {
-                    codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
-                    codes.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OpExt{ 32 /*stack_size*/ }, ByteCode::OR_VOID });
-                    codes.push_back(ByteCode::Op{ ByteCode::OC_EXEC, ByteCode::OpExt{ 1 /*ver*/ }, ByteCode::OR_VOID });
-
                     if (exp->entity == SyntaxEntity::DEF_Variable)
                     {
                         ice::arctic::SyntaxNode_Variable const* const var = static_cast<ice::arctic::SyntaxNode_Variable const*>(exp);
 
                         auto symbol = create_symbol(var->name.value);
-                        {
-                            variables.emplace(symbol, ByteCode::Addr{ var_addr });
-                            var_addr += 4;
-                        }
+                        variables.emplace(symbol, ByteCode::Addr{ var_addr });
+                        // std::cout << variables.at(symbol).loc << std::endl;
 
                         if (var->child != nullptr && var->child->entity == SyntaxEntity::EXP_Expression)
                         {
-                            codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
-                            codes.push_back(ByteCode::Value{ var_addr - 4 });
-                            generate_bytecode_expression_l0(var->child, codes, true);
+                            // codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
+                            // codes.push_back(ByteCode::Value{ var_addr - 4 });
+                            generate_bytecode_expression_l0(var->child, codes, { var_addr }, true);
                         }
+
+                        var_addr += 4;
                     }
                     else if (exp->entity == SyntaxEntity::EXP_Expression)
                     {
-                        generate_bytecode_expression_l0(exp, codes);
+                        generate_bytecode_expression_l0(exp, codes, { 0 });
                     }
 
 
@@ -1539,8 +1407,10 @@ public:
 
         while(it != end)
         {
-            std::cout << std::hex << (ice::u32) it->byte << '\n';
-            std::cout << std::dec << "Reg[" << registers[0] << ", " << registers[1]<< ", " << registers[ByteCode::OR_PTR] << "]" << '\n';
+            assert(it->op.operation != ByteCode::OC_META);
+            assert(it->op.operation != ByteCode::OC_EXEC);
+            std::cout << std::dec << "\nReg[" << registers[0] << ", " << registers[1]<< ", " << registers[ByteCode::OR_PTR] << "]" << '\n';
+            std::cout << std::dec << to_string(it->op.operation) << " (" << (int)it->op.extension << ", " << (int)it->op.registr << ")" << '\n';
 
             if (it->op.operation == ByteCode::OC_ADD32)
             {
@@ -1647,12 +1517,15 @@ public:
                 }
             }
 
+            std::cout << std::dec << "= Reg[" << registers[0] << ", " << registers[1]<< ", " << registers[ByteCode::OR_PTR] << "]" << '\n';
             it += 1;
         }
 
         assert((it - 1)->op.operation == ByteCode::OC_END);
 
         std::cout << "\n" << std::dec << *((ice::u32*)memory) << '\n';
+        std::cout << "\n" << std::dec << *((ice::u32*)memory + 1) << '\n';
+        std::cout << "\n" << std::dec << *((ice::u32*)memory + 2) << '\n';
         delete[] memory;
     }
 
@@ -1764,7 +1637,7 @@ auto main(int argc, char** argv) -> int
         for ([[maybe_unused]] auto const& block : bcg.codeblocks)
         {
             std::cout << "Block: " << "\n";
-            // bvm.execute(block, global_context, global_state);
+             bvm.execute(block, global_context, global_state);
             std::cout << "\n";
         }
 
