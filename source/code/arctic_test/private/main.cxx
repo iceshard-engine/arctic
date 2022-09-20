@@ -1043,8 +1043,6 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
         std::vector<ByteCode>& codes
     ) noexcept
     {
-        assert(extension != ByteCode::OE_64BIT);
-
         if (node->entity == SyntaxEntity::EXP_BinaryOperation)
         {
             auto const* binop = static_cast<ice::arctic::SyntaxNode_ExpressionBinaryOperation const*>(node);
@@ -1410,7 +1408,7 @@ public:
             assert(it->op.operation != ByteCode::OC_META);
             assert(it->op.operation != ByteCode::OC_EXEC);
             std::cout << std::dec << "\nReg[" << registers[0] << ", " << registers[1]<< ", " << registers[ByteCode::OR_PTR] << "]" << '\n';
-            std::cout << std::dec << to_string(it->op.operation) << " (" << (int)it->op.extension << ", " << (int)it->op.registr << ")" << '\n';
+            std::cout << std::dec << to_string(it->op.operation) << " (" << to_string(it->op.extension) << ", " << (int)it->op.registr << ")" << '\n';
 
             if (it->op.operation == ByteCode::OC_ADD32)
             {

@@ -37,7 +37,6 @@ namespace ice::arctic
             OE_ADDR,
             OE_VALUE,
             OE_VALUE_SP,
-            OE_64BIT,
 
             OE_META_SYMBOL,
         };
@@ -137,6 +136,21 @@ namespace ice::arctic
             case ByteCode::OpCode::OC_DIV64: return "DIV[64]";
 
             case ByteCode::OpCode::OC_END: return "END";
+        }
+        return "<unknown>";
+    }
+
+    static constexpr auto to_string(ByteCode::OpExt code) noexcept -> std::string_view
+    {
+        switch(code)
+        {
+            case ByteCode::OpExt::OE_NONE: return "NONE";
+            case ByteCode::OpExt::OE_REG: return "REGI";
+            case ByteCode::OpExt::OE_STACK: return "STAK";
+            case ByteCode::OpExt::OE_ADDR: return "ADDR";
+            case ByteCode::OpExt::OE_VALUE: return "VALU";
+            case ByteCode::OpExt::OE_VALUE_SP: return "SPTR";
+            case ByteCode::OpExt::OE_META_SYMBOL: return "MSYM";
         }
         return "<unknown>";
     }
