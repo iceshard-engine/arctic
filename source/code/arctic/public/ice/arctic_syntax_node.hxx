@@ -21,6 +21,11 @@ namespace ice::arctic
         //ice::arctic::SyntaxNode const* custom_sibling;
     };
 
+    struct SyntaxNode_ROOT : SyntaxNode
+    {
+        static constexpr ice::arctic::SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity::ROOT;
+    };
+
     struct SyntaxNode_Variable : SyntaxNode
     {
         static constexpr ice::arctic::SyntaxEntity RepresentedSyntaxEntity = SyntaxEntity::DEF_Variable;

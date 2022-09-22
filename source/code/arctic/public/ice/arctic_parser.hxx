@@ -1,24 +1,24 @@
 #pragma once
 #include <ice/arctic_syntax_visitor.hxx>
 #include <ice/arctic_lexer.hxx>
-
-#include <vector>
+#include <memory>
 
 namespace ice::arctic
 {
 
-    class Parser : public ice::arctic::SyntaxNodeAllocator
+    class Parser
     {
     public:
-        void parse(ice::arctic::Lexer& lexer) noexcept;
+        virtual ~Parser() noexcept = default;
 
-        void add_visitor(ice::arctic::SyntaxVisitorBase& visitor) noexcept;
-
-        auto allocate(ice::u64 size, ice::u64 align) noexcept -> void*;
-        void deallocate(void* ptr) noexcept;
-
-    private:
-        std::vector<ice::arctic::SyntaxVisitorBase*> _visitors;
+        virtual void parse(
+            ice::arctic::Lexer& lexer,
+            ice::arctic::SyntaxNodeAllocator& node_alloc,
+            ice::Span<ice::arctic::SyntaxVisitorBase*> visitors
+        ) noexcept = 0;
     };
+
+    auto create_default_parser() noexcept -> std::unique_ptr<ice::arctic::Parser>;
+    auto create_simple_allocator() noexcept -> std::unique_ptr<ice::arctic::SyntaxNodeAllocator>;
 
 } // namespace ice::arctic

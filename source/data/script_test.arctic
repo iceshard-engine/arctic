@@ -2,17 +2,17 @@ context Script
 
 fn foo1() : i32
 {
-    foo1 = 1 + 2
+    foo1 = 1 + 2 + 4
 }
 
-fn foo1() : i32
+fn foo2() : i32
 {
-    foo1 = 1 * 2 + 2 * 3
+    foo2 = 1 * 2 + 2 * 3
 }
 
-fn foo() : i32
+fn main() : i32
 {
-    foo = 2 * 3 * 8 - 1 - 1 * 7 - 1 * 2
+    main = foo1()
 }
 
 
@@ -21,7 +21,7 @@ fn foo_with() : i32
     let x : i32 = 1
     let y : i32 = 2
 
-    foo_with = 3 + 1 * 2
+    foo_with = 3 + 1
 }
 
 fn foo_with_うにこど() : i32

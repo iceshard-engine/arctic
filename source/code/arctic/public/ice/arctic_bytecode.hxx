@@ -27,6 +27,8 @@ namespace ice::arctic
             OC_MUL64,
             OC_DIV64,
 
+            OC_CALL0_VOID,
+
             OC_END,
         };
         enum OpExt : ice::u8
@@ -37,8 +39,10 @@ namespace ice::arctic
             OE_ADDR,
             OE_VALUE,
             OE_VALUE_SP,
+            OE_FUNC,
 
             OE_META_SYMBOL,
+            OE_META_END,
         };
         enum OpReg : ice::u8
         {
@@ -134,6 +138,8 @@ namespace ice::arctic
             case ByteCode::OpCode::OC_SUB64: return "SUB[64]";
             case ByteCode::OpCode::OC_MUL64: return "MUL[64]";
             case ByteCode::OpCode::OC_DIV64: return "DIV[64]";
+
+            case ByteCode::OpCode::OC_CALL0_VOID: return "CALL[0,VOID]";
 
             case ByteCode::OpCode::OC_END: return "END";
         }

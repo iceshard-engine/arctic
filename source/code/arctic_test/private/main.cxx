@@ -12,6 +12,7 @@
 
 #include <ice/arctic_bytecode.hxx>
 #include <ice/arctic_vm.hxx>
+#include <ice/arctic_script.hxx>
 
 #include <string>
 #include <charconv>
@@ -975,9 +976,49 @@ auto get_operation_level(ice::arctic::SyntaxNode_ExpressionBinaryOperation const
 
 struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 {
-    std::vector<ByteCode> scriptcode;
-    std::vector<std::vector<ByteCode>> codeblocks;
+    // ice::u32 bytecode_offset = 0;
 
+    // std::vector<ByteCode> scriptcode;
+    // std::vector<std::vector<ByteCode>> codeblocks;
+    std::vector<ice::arctic::SyntaxNode const*> nodes;
+
+    void release_child_nodes(
+        ice::arctic::SyntaxNodeAllocator& alloc,
+        ice::arctic::SyntaxNode const* node
+    ) noexcept
+    {
+        if (node == nullptr) return;
+
+        auto const* child_it = node->child;
+        while (child_it != nullptr)
+        {
+            release_child_nodes(alloc, child_it);
+
+            auto const* next = child_it->sibling;
+            alloc.destroy((ice::arctic::SyntaxNode*)child_it);
+            child_it = next;
+        }
+    };
+
+    void release_nodes(ice::arctic::SyntaxNodeAllocator& alloc) noexcept
+    {
+        fmt::print("Collected nodes: {}\n", nodes.size());
+        for (auto const* node : nodes)
+        {
+            auto const* sib = node;
+            while(sib != nullptr)
+            {
+                release_child_nodes(alloc, sib);
+
+                auto const* next = sib->sibling;
+                alloc.destroy((ice::arctic::SyntaxNode*)sib);
+                sib = next;
+            }
+        }
+    }
+
+    std::unordered_map<Symbol, std::vector<ByteCode>> functions;
+    std::unordered_map<Symbol, ByteCode::Addr> function_idx;
     std::unordered_map<Symbol, ByteCode::Addr> variables;
 
     void generate_bytecode_expression_arg_reg(
@@ -992,19 +1033,33 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
             if (vnode->value.type == TokenType::CT_Symbol)
             {
                 auto symbol = create_symbol(vnode->value.value);
-                assert(variables.contains(symbol));
-
-                fmt::print("{} == {}\n", dbg_to_string(vnode), variables.at(symbol).loc);
-                // R[X] = [OR_PTR]
-                codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
-                codes.push_back(variables.at(symbol));
-                codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_ADDR, reg });
+                if(variables.contains(symbol))
+                {
+                    fmt::print("VAR: {} == {}\n", dbg_to_string(vnode), variables.at(symbol).loc);
+                    // R[X] = [OR_PTR]
+                    codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, ByteCode::OR_PTR });
+                    codes.push_back(variables.at(symbol));
+                    codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_ADDR, reg });
+                }
             }
             else if (vnode->value.type == TokenType::CT_Number)
             {
                 // R[X] = <number>
                 codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_VALUE, reg });
                 codes.push_back(to_number_bc(vnode->value.value));
+            }
+        }
+        else if (node->entity == SyntaxEntity::EXP_Call)
+        {
+            auto const callnode = static_cast<ice::arctic::SyntaxNode_ExpressionCall const*>(node);
+            auto symbol = create_symbol(callnode->function.value);
+            if(function_idx.contains(symbol))
+            {
+                fmt::print("FUN: {} == {}\n", dbg_to_string(callnode), function_idx.at(symbol).loc);
+                // R[X] = [OR_PTR]
+                codes.push_back(ByteCode::Op{ ByteCode::OC_MOVR, ByteCode::OE_FUNC, ByteCode::OR_TP });
+                codes.push_back(function_idx.at(symbol));
+                codes.push_back(ByteCode::Op{ ByteCode::OC_CALL0_VOID, ByteCode::OE_NONE, ByteCode::OR_VOID });
             }
         }
         // else if (node->entity == SyntaxEntity::EXP_UnaryOperation)
@@ -1102,6 +1157,11 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 {
                     assert(false);
                 }
+                else if (from->entity == SyntaxEntity::EXP_Call)
+                {
+                    assert(false);
+                    //generate_bytecode_expression_l0(exp, codes, { 0 });
+                }
                 else if (from->entity == SyntaxEntity::EXP_BinaryOperation)
                 {
                     // fmt::print("{} {:<{}}{}\n", LeftSide ? "<*" : "*>", "|", last_level * 2, dbg_to_string(from));
@@ -1140,6 +1200,11 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 {
                     assert(false);
                     //generate_bytecode_expression_arg_reg(from, ByteCode::OR_R1, codes);
+                }
+                else if (from->entity == SyntaxEntity::EXP_Call)
+                {
+                    // assert(false);
+                    generate_bytecode_expression_arg_reg(from, ByteCode::OR_R1, codes);
                 }
                 else if (from->entity == SyntaxEntity::EXP_BinaryOperation)
                 {
@@ -1311,20 +1376,21 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
 
     void visit(ice::arctic::SyntaxNode const* node) noexcept override
     {
+        nodes.push_back(node);
         std::cout << "- " << to_string(node->entity) << "\n";
 
         if (node->entity == SyntaxEntity::DEF_Function)
         {
             ice::arctic::SyntaxNode_Function const* const fn = static_cast<ice::arctic::SyntaxNode_Function const*>(node);
 
-            scriptcode.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OE_META_SYMBOL, ByteCode::OR_VOID });
+            // scriptcode.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OE_META_SYMBOL, ByteCode::OR_VOID });
 
             variables.clear();
-            auto symbol = create_symbol(fn->name.value);
+            auto fn_symbol = create_symbol(fn->name.value);
             {
-                scriptcode.push_back(ByteCode::Value{ (ice::u32) symbol.bcrep.size() });
-                scriptcode.insert(scriptcode.end(), symbol.bcrep.begin(), symbol.bcrep.end());
-                variables.emplace(symbol, ByteCode::Addr{ 0 });
+                // scriptcode.push_back(ByteCode::Value{ (ice::u32) fn_symbol.bcrep.size() });
+                // scriptcode.insert(scriptcode.end(), fn_symbol.bcrep.begin(), fn_symbol.bcrep.end());
+                variables.emplace(fn_symbol, ByteCode::Addr{ 0 });
             }
 
             if (node->sibling && node->sibling->child)
@@ -1367,10 +1433,67 @@ struct ByteCodeGenerator : public ice::arctic::SyntaxVisitorBase
                 }
 
                 codes.push_back(ByteCode::Op{ ByteCode::OC_END });
-                codeblocks.push_back(std::move(codes));
+                // codeblocks.push_back(std::move(codes));
+
+                functions.emplace(fn_symbol, std::move(codes));
+                function_idx.emplace(fn_symbol, ByteCode::Addr{ (ice::u32) function_idx.size() });
+            }
+        }
+    }
+
+    auto finalize() noexcept -> std::vector<ByteCode>
+    {
+        std::vector<ByteCode> scriptcode;
+
+        ice::u32 symbol_bytes = 0;
+        for (auto const& entry : functions)
+        {
+            symbol_bytes += entry.first.bcrep.size();
+        }
+
+        ice::u32 const initial_bytecode_offset = symbol_bytes + functions.size() * 3;
+        ice::u32 bytecode_offset = initial_bytecode_offset;
+
+        std::vector<ice::u32> fn_offsets;
+        for (auto const& entry : functions)
+        {
+            auto const& fn_symbol = entry.first;
+            auto const& bytecode = entry.second;
+
+            fn_offsets.push_back(bytecode_offset);
+            scriptcode.push_back(ByteCode::Op{ ByteCode::OC_META, ByteCode::OE_META_SYMBOL, ByteCode::OR_VOID });
+            scriptcode.push_back(ByteCode::Value{ bytecode_offset });
+            scriptcode.push_back(ByteCode::Value{ (ice::u32) fn_symbol.bcrep.size() });
+            scriptcode.insert(scriptcode.end(), fn_symbol.bcrep.begin(), fn_symbol.bcrep.end());
+
+            bytecode_offset += bytecode.size();
+        }
+
+        for (auto& entry : functions)
+        {
+            auto it = entry.second.begin();
+            auto const end = entry.second.end();
+
+            while(it != end)
+            {
+                if (it->op.extension == ByteCode::OE_FUNC)
+                {
+                    it += 1;
+                    fmt::print("{} = {}\n", it->byte, fn_offsets[it->byte]);
+                    it->byte = fn_offsets[it->byte];
+                }
+                it += 1;
             }
 
+            scriptcode.insert(scriptcode.end(), entry.second.begin(), end);
         }
+
+        for (auto const& entry : functions)
+        {
+            scriptcode.insert(scriptcode.end(), entry.second.begin(), entry.second.end());
+        }
+
+        return scriptcode;
     }
 };
 
@@ -1380,24 +1503,49 @@ class BasicVirtualMachine : public ice::arctic::VirtualMachine
 {
 public:
     void execute(
-        std::vector<ice::arctic::ByteCode> const& bytecode,
+        ice::arctic::ByteCode const* scriptcode,
+        ice::arctic::ByteCode const* bytecode,
+        ice::arctic::ExecutionContext const& context,
+        ice::arctic::ExecutionState& state
+    ) noexcept
+    {
+        auto const* it = bytecode;
+        while(it->op.operation != ByteCode::OC_END)
+        {
+            it += 1;
+        }
+
+        execute(scriptcode, std::span<ice::arctic::ByteCode const>{ bytecode, it + 1 }, context, state);
+    }
+
+    void execute(
+        ice::arctic::ByteCode const* scriptcode,
+        std::span<ice::arctic::ByteCode const> const& bytecode,
         ice::arctic::ExecutionContext const& context,
         ice::arctic::ExecutionState& state
     ) noexcept override
     {
-        registers[0] = 0;
+        // registers[0] = 0;
 
         auto it = bytecode.begin();
         auto const end = bytecode.end();
 
+        fmt::print("{}\n", to_string(it->op.operation));
+
         // Skip metadata
-        assert(it->op.operation == ByteCode::OC_META && it->op.extension == 1);
-        it += 1;
-        assert(it->op.operation == ByteCode::OC_META && it->op.extension != 0);
-        char* memory = new char[it->op.extension + 32];
-        memset(memory, '\0', it->op.extension + 32);
-        memset(registers, '\0', sizeof(registers));
-        it += 1;
+        // assert(it->op.operation == ByteCode::OC_META && it->op.extension == 1);
+        // it += 1;
+        // assert(it->op.operation == ByteCode::OC_META && it->op.extension != 0);
+        // char* memory = new char[it->op.extension + 32];
+        // memset(memory, '\0', it->op.extension + 32);
+        // memset(registers, '\0', sizeof(registers));
+        // it += 1;
+
+        char* stack = state.stack_pointer;
+        char* memory = stack + 128;
+        ice::u32* registers = state.registers;
+
+        memset(registers, '\0', sizeof(state.registers));
 
 
         assert(it->op.operation == ByteCode::OC_EXEC);
@@ -1491,7 +1639,7 @@ public:
             }
             else if (it->op.operation == ByteCode::OC_MOVR)
             {
-                if (it->op.extension == ByteCode::OE_VALUE)
+                if (it->op.extension == ByteCode::OE_VALUE || it->op.extension == ByteCode::OE_FUNC)
                 {
                     ice::u32 const reg = it->op.registr;
                     it += 1;
@@ -1514,6 +1662,17 @@ public:
                     registers[reg] = registers[it->byte];
                 }
             }
+            else if (it->op.operation == ByteCode::OC_CALL0_VOID)
+            {
+                // void* const mem = stack + registers[ByteCode::OR_TP];
+                // if (it->op.extension == ByteCode::OE_NONE)
+                {
+                    fmt::print("CALLED: {}\n", registers[ByteCode::OR_TP]);
+                    execute(scriptcode, scriptcode + registers[ByteCode::OR_TP] + 2, context, state);
+                    // ice::u32 const reg = it->op.registr;
+                    // *((ice::u32*)mem) = registers[reg];
+                }
+            }
 
             std::cout << std::dec << "= Reg[" << registers[0] << ", " << registers[1]<< ", " << registers[ByteCode::OR_PTR] << "]" << '\n';
             it += 1;
@@ -1524,11 +1683,11 @@ public:
         std::cout << "\n" << std::dec << *((ice::u32*)memory) << '\n';
         std::cout << "\n" << std::dec << *((ice::u32*)memory + 1) << '\n';
         std::cout << "\n" << std::dec << *((ice::u32*)memory + 2) << '\n';
-        delete[] memory;
+        // delete[] memory;
     }
 
-    char stack[256]{ };
-    ice::u32 registers[ByteCode::OR_VOID + 1]{ };
+    // char stack[256]{ };
+    // ice::u32 registers[ByteCode::OR_VOID + 1]{ };
 };
 
 auto main(int argc, char** argv) -> int
@@ -1578,6 +1737,23 @@ auto main(int argc, char** argv) -> int
     ice::arctic::WordMatcher matcher{ };
     ice::arctic::initialize_ascii_matcher(&matcher);
     {
+
+        if constexpr(true)
+        {
+            ice::arctic::WordProcessor processor = ice::arctic::create_word_processor(
+                contents._buffer,
+                &matcher
+            );
+
+            ice::arctic::Lexer lexer = ice::arctic::create_lexer(
+                std::move(processor)
+            );
+
+            std::unique_ptr<ice::arctic::Script> script = ice::arctic::load_script(lexer);
+            fmt::print("Script contains {} functions.\n", script->count_functions());
+            return 0;
+        }
+
         ice::arctic::WordProcessor processor = ice::arctic::create_word_processor(
             contents._buffer,
             &matcher
@@ -1592,52 +1768,92 @@ auto main(int argc, char** argv) -> int
         // HLSL_Transpiler my_hlsl_gen{ };
 
         ByteCodeGenerator bcg;
-        BasicVirtualMachine bvm;
 
-        ice::arctic::Parser parser;
-        parser.add_visitor(bcg);
+        ice::arctic::SyntaxVisitorBase* visitors[]{
+            &bcg
+        };
+
+        std::unique_ptr<ice::arctic::SyntaxNodeAllocator> alloc = ice::arctic::create_simple_allocator();
+        std::unique_ptr<ice::arctic::Parser> parser = ice::arctic::create_default_parser();
+        // parser.add_visitor(bcg);
         // parser.add_visitor(my_glsl_gen);
         // parser.add_visitor(my_hlsl_gen);
 
         auto t1 = std::chrono::high_resolution_clock::now();
-
-        parser.parse(lexer);
-
+        parser->parse(lexer, *alloc, visitors);
         auto t2 = std::chrono::high_resolution_clock::now();
+        parser = nullptr;
+
+        auto const scriptcode = bcg.finalize();
 
         [[maybe_unused]]
         ice::arctic::ExecutionContext global_context;
         [[maybe_unused]]
         ice::arctic::ExecutionState global_state;
 
-        auto it = bcg.scriptcode.begin();
-        auto const end = bcg.scriptcode.end();
+        char static_stack[256];
+        global_state.stack_pointer = static_stack;
+        global_state.stack_size = 256;
 
-        while(it != end)
+        auto it = scriptcode.begin();
+        auto const end = scriptcode.end();
+
+        std::u8string_view symbol = u8"main";
+        if (argc >= 3)
+        {
+            fmt::print("{}\n", argv[2]);
+            symbol = { (char8_t const*) argv[2], strlen(argv[2]) };
+        }
+
+        ByteCode const* requested_code = nullptr;
+        auto const requested_symbol = create_symbol(symbol);
+
+        while(it != end && it->op.extension != ByteCode::OE_META_END)
         {
             if (it->op.extension == ByteCode::OE_META_SYMBOL)
             {
                 it += 1;
-                std::cout << "SYM 0";
+                auto const fn_addr = it;
+
+                it += 1;
+                std::cout << "SYM 0\n";
                 ice::u32 const size = it->byte;
 
-                for(ice::u32 idx = 0; idx < size; ++idx)
+                std::span<ByteCode const> const symbol_bc_view{ it + 1, size };
+                Symbol symbol_bc;
+                symbol_bc.bcrep.insert(symbol_bc.bcrep.end(), symbol_bc_view.begin(), symbol_bc_view.end());
+
+                if (symbol_bc == requested_symbol)
                 {
-                    it += 1;
-                    std::cout << std::hex << "|" << it->byte;
+                    requested_code =  scriptcode.data() + fn_addr->byte + 2;
+                    fmt::print("{} = {}\n", fn_addr->byte, to_string(requested_code->op.operation));
                 }
-                std::cout << "\n";
+
+                // for(ice::u32 idx = 0; idx < size; ++idx)
+                // {
+                //     it += 1;
+                //     std::cout << std::hex << "|" << it->byte;
+                // }
+                // std::cout << "\n";
             }
 
             it += 1;
         }
 
-        for ([[maybe_unused]] auto const& block : bcg.codeblocks)
+        BasicVirtualMachine bvm;
+        if (requested_code != nullptr)
         {
-            std::cout << "Block: " << "\n";
-             bvm.execute(block, global_context, global_state);
-            std::cout << "\n";
+            bvm.execute(scriptcode.data(), requested_code, global_context, global_state);
         }
+
+        bcg.release_nodes(*alloc);
+
+        // for ([[maybe_unused]] auto const& block : bcg.codeblocks)
+        // {
+        //     std::cout << "Block: " << "\n";
+        //      bvm.execute(block, global_context, global_state);
+        //     std::cout << "\n";
+        // }
 
         std::cout << std::dec;
         std::cout << "Total time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() << "ns" << std::endl;
