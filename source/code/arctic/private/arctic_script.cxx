@@ -4,6 +4,8 @@
 #include <ice/arctic_syntax_visitor.hxx>
 #include <unordered_set>
 
+#include "arctic_script_utils.hxx"
+
 namespace ice::arctic
 {
 
@@ -15,6 +17,18 @@ namespace ice::arctic
         ~LoadedScript() noexcept override;
 
         auto count_functions() const noexcept -> ice::u32 override { return (ice::u32) _def_functions.size(); }
+        auto functions() const noexcept -> ice::Span<ice::arctic::SyntaxNode_Function const* const> override
+        {
+            return { &_def_functions[0], _def_functions.size() };
+        }
+
+        auto count_usertypes() const noexcept -> ice::u32 override { return 0; }
+        auto count_constants() const noexcept -> ice::u32 override { return 0; }
+        auto count_context_variables() const noexcept -> ice::u32 override { return 0; }
+
+        auto usertypes() const noexcept -> ice::Span<ice::arctic::SyntaxNode const* const> override { return { }; }
+        auto constants() const noexcept -> ice::Span<ice::arctic::SyntaxNode const* const> override { return { }; }
+        auto context_variables() const noexcept -> ice::Span<ice::arctic::SyntaxNode const* const> override { return { }; }
 
     public:
         std::vector<ice::arctic::SyntaxNode_Function const*> _def_functions;

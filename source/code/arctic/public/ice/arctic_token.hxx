@@ -59,29 +59,6 @@ namespace ice::arctic
         OP_And = Operator | 0x0006,
         OP_Or = Operator | 0x0007,
 
-        // Native type tokens
-        NativeType = 0x0004'0000,
-        NativeType_Signed = NativeType | 0x0100,
-        NativeType_Unsigned = NativeType | 0x0200,
-        NativeType_FloatingPoint = NativeType | 0x0400,
-        //NativeType_PointerType = NativeType | 0x1000,
-
-        NT_Void = NativeType,
-        NT_Bool = NativeType | 0x0001,
-        NT_Utf8 = NativeType | 0x0002,
-
-        NT_f32 = NativeType_FloatingPoint | 0x0001,
-        NT_f64 = NativeType_FloatingPoint | 0x0002,
-
-        NT_i8 = NativeType_Signed | 0x0001,
-        NT_i16 = NativeType_Signed | 0x0002,
-        NT_i32 = NativeType_Signed | 0x0003,
-        NT_i64 = NativeType_Signed | 0x0004,
-        NT_u8 = NativeType_Unsigned | 0x0005,
-        NT_u16 = NativeType_Unsigned | 0x0006,
-        NT_u32 = NativeType_Unsigned | 0x0007,
-        NT_u64 = NativeType_Unsigned | 0x0008,
-
         // Special
         ST_Any = 0x7000'0000,
         ST_Whitespace = 0x8000'0000,

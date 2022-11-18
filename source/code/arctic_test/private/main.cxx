@@ -13,6 +13,7 @@
 #include <ice/arctic_bytecode.hxx>
 #include <ice/arctic_vm.hxx>
 #include <ice/arctic_script.hxx>
+#include <ice/arctic_script_symbol.hxx>
 
 #include <string>
 #include <charconv>
@@ -1751,6 +1752,66 @@ auto main(int argc, char** argv) -> int
 
             std::unique_ptr<ice::arctic::Script> script = ice::arctic::load_script(lexer);
             fmt::print("Script contains {} functions.\n", script->count_functions());
+            for (ice::arctic::SyntaxNode_Function const* func : script->functions())
+            {
+                fmt::print("Func: {}\n", std::string_view{ (char const*)func->name.value.data(), func->name.value.size() });
+            }
+
+            std::unique_ptr<ice::arctic::ScriptSymbol> const tab[] {
+                ice::arctic::create_type_symbol2(u8"i8"),
+                ice::arctic::create_type_symbol2(u8"u16"),
+                ice::arctic::create_type_symbol2(u8"u16 in"),
+                ice::arctic::create_type_symbol2(u8"u32 inout"),
+                ice::arctic::create_type_symbol2(u8"FooT out"),
+                ice::arctic::create_type_symbol2(u8"fn() : f32"),
+                ice::arctic::create_type_symbol2(u8"foa(a : u32 in, b : i32 inout, : f32 out) : f64"),
+                ice::arctic::create_type_symbol2(u8"fn(:i8) : f64"),
+                ice::arctic::create_type_symbol2(u8"fn(:FooT) : f32"),
+                ice::arctic::create_type_symbol2(u8"fb(:i8) : f64"),
+                ice::arctic::create_type_symbol2(u8"FooT(:FooT) : f32"),
+                ice::arctic::create_type_symbol2(u8"fn(a : FooT inout, b : BooT mut) : f32"),
+            };
+
+            for (auto const& p : tab)
+            {
+                p->dbg_print();
+            }
+
+            if (argc >= 3)
+            {
+                auto test_against = ice::arctic::create_type_symbol2(ice::String{ (ice::utf8 const*) argv[2], strlen(argv[2]) });
+                test_against->dbg_print();
+                fmt::print("Equals to:\n");
+                for (auto const& p : tab)
+                {
+                    if (*p == *test_against)
+                    {
+                        p->dbg_print();
+                    }
+                }
+
+                fmt::print("Compatible:\n");
+                for (auto const& p : tab)
+                {
+                    if (p->is_compatible(*test_against))
+                    {
+                        p->dbg_print();
+                    }
+                }
+            }
+
+            // auto const s0 = ice::arctic::create_type_symbol2(u8"utf8 in mut");
+            // auto const s1 = ice::arctic::create_type_symbol2(u8"void inout");
+            // auto const s2 = ice::arctic::create_type_symbol2(u8"fn() : f32");
+            // auto const s3 = ice::arctic::create_type_symbol2(u8"foa(a : u32, b : i32, : f32 out) : f64");
+            // auto const s4 = ice::arctic::create_type_symbol2(u8"trololo");
+
+            // s0->dbg_print();
+            // s1->dbg_print();
+            // s2->dbg_print();
+            // s3->dbg_print();
+            // s4->dbg_print();
+
             return 0;
         }
 
