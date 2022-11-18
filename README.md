@@ -1,3 +1,6 @@
+> Development on this project is going to be paused for the time beeing, due to lots of changes outside the webz.
+> Dandielo
+
 # Arctic
 
 A script language for the needs of [IceShard](https://github.com/iceshard-engine/engine).
